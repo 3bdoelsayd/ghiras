@@ -1,0 +1,55 @@
+# Flutter-related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+bin/
+
+# Android-related
+android/app/build/
+android/app/src/main/res/raw/azan.mp3
+android/.gradle/
+**/android/**/generated/
+**/android/gen/
+**/android/out/
+.gradle/
+local.properties
+*.keystore
+*.jks
+*.subs
+*.apk
+*.aab
+
+# iOS-related
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+**/.XCodeComplexity.json
+DerivedData/
+Runner.xcworkspace/xcuserdata/
+
+# Web-related
+.tool/
+
+# IDE-related
+.idea/
+.vscode/
+*.iml
+*.iws
+.project
+.settings/
+.classpath
+
+# MacOS-related
+.DS_Store
+
+# Ghiras Specific Cache
+**/quran_pages_cache/
+**/khatmah_box/
+**/settings/
