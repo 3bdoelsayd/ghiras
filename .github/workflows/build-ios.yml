@@ -25,7 +25,7 @@ jobs:
         run: flutter build ipa --no-codesign
 
       - name: Upload IPA
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ghiras-ipa
           path: build/ios/ipa/*.ipa
