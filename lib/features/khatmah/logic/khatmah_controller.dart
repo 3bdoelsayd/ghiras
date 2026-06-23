@@ -30,6 +30,7 @@ class KhatmahController extends GetxController {
       title: title,
       startDate: DateTime.now(),
       durationDays: days,
+      initialPage: startPage,
       lastReadPage: startPage > 1 ? startPage - 1 : 0,
       readPages: [],
     );
@@ -54,7 +55,7 @@ class KhatmahController extends GetxController {
     if (index != -1) {
       final khatmah = khatmat[index];
       int pagesToAdd = khatmah.pagesPerDay;
-      int startPage = (khatmah.lastReadPage > 0 ? khatmah.lastReadPage : 1);
+      int startPage = (khatmah.lastReadPage > 0 ? khatmah.lastReadPage + 1 : 1);
       
       List<int> newlyRead = [];
       for (int i = 0; i < pagesToAdd; i++) {

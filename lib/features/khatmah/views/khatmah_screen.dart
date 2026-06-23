@@ -13,21 +13,21 @@ class KhatmahScreen extends StatelessWidget {
     final controller = Get.put(KhatmahController());
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F7),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(' الختمه', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text('الختمة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 18)),
         centerTitle: true,
-        backgroundColor: AppColors.primary,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textDark),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Obx(() => controller.khatmat.isEmpty
           ? _buildEmptyState(context, controller)
           : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: _buildKhatmahCard(context, controller.khatmat.first, controller),
             )),
       floatingActionButton: Obx(() => controller.khatmat.isEmpty 
@@ -36,7 +36,7 @@ class KhatmahScreen extends StatelessWidget {
             label: const Text('بدء ختمة جديدة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, color: Colors.white)),
             icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.white),
             backgroundColor: AppColors.primary,
-            elevation: 4,
+            elevation: 2,
           )
         : const SizedBox.shrink()),
     );
@@ -48,16 +48,23 @@ class KhatmahScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.05), shape: BoxShape.circle),
-            child: Icon(Icons.menu_book_rounded, size: 80, color: AppColors.primary.withOpacity(0.3)),
+            padding: const EdgeInsets.all(35),
+            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.04), shape: BoxShape.circle),
+            child: Icon(Icons.menu_book_rounded, size: 70, color: AppColors.primary.withOpacity(0.2)),
           ),
           const SizedBox(height: 25),
-          const Text('لا توجد ختمات جارية حالياً', style: TextStyle(fontFamily: 'Cairo', fontSize: 18, color: AppColors.textDark, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 30),
+          const Text('ابدأ رحلة جديدة مع القرآن', style: TextStyle(fontFamily: 'Cairo', fontSize: 18, color: AppColors.textDark, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          const Text('لا توجد ختمات جارية حالياً', style: TextStyle(fontFamily: 'Cairo', fontSize: 14, color: AppColors.textGrey)),
+          const SizedBox(height: 35),
           ElevatedButton.icon(
             onPressed: () => _showAddKhatmahDialog(context, controller),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary, 
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15), 
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              elevation: 0,
+            ),
             icon: const Icon(Icons.add, color: Colors.white),
             label: const Text('إضافة ختمة', style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontWeight: FontWeight.bold)),
           ),
@@ -73,29 +80,29 @@ class KhatmahScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 25,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         children: [
-          // Header
+          // Header Section
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            padding: const EdgeInsets.fromLTRB(16, 20, 24, 0),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 24),
+                  child: const Icon(Icons.auto_stories_rounded, color: AppColors.primary, size: 22),
                 ),
                 const SizedBox(width: 15),
                 Expanded(
@@ -104,14 +111,15 @@ class KhatmahScreen extends StatelessWidget {
                     children: [
                       Text(
                         khatmah.title,
-                        style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.textDark),
+                        style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 17, color: AppColors.textDark),
                       ),
+                      const SizedBox(height: 4),
                       _buildLaggingStatus(khatmah),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 24),
+                  icon: Icon(Icons.delete_outline_rounded, color: Colors.red.withOpacity(0.4), size: 22),
                   onPressed: () => _showDeleteConfirm(context, controller, khatmah),
                 ),
               ],
@@ -119,78 +127,102 @@ class KhatmahScreen extends StatelessWidget {
           ),
           
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             child: Column(
               children: [
+                // Info Row
                 Row(
                   children: [
                     Expanded(child: _buildDetailedInfo(Icons.calendar_today_rounded, 'المتبقي', '${khatmah.remainingDays} يوم')),
-                    Container(width: 1, height: 30, color: Colors.grey[100]),
-                    Expanded(child: _buildDetailedInfo(Icons.auto_stories_rounded, 'الورد اليومي', '${khatmah.pagesPerDay} ص/يوم')),
+                    Container(width: 1, height: 25, color: Colors.grey[50]),
+                    Expanded(child: _buildDetailedInfo(Icons.menu_book_rounded, 'الورد اليومي', '${khatmah.pagesPerDay} ص/يوم')),
                   ],
                 ),
                 const SizedBox(height: 25),
                 
-                // الورد القادم بتصميم عصري
+                // Next Portion Card (وردك القادم)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [const Color(0xFFFFF9F0), Colors.orange.withOpacity(0.05)],
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.orange.withOpacity(0.1), width: 1),
+                    color: const Color(0xFFFAF7F2), // Softer beige
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFFE8E1D5), width: 1),
                   ),
                   child: Column(
                     children: [
-                      const Text('وردك القادم بإذن الله', style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.orange, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
                       Text(
-                        'من صفحة $startPage إلى صفحة $targetPage',
-                        style: const TextStyle(fontFamily: 'Cairo', fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textDark),
+                        'وردك القادم بإذن الله', 
+                        style: TextStyle(
+                          fontFamily: 'Cairo', 
+                          fontSize: 13, 
+                          color: AppColors.primary.withOpacity(0.6), 
+                          fontWeight: FontWeight.bold
+                        )
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _pageIndicator('من صفحة', startPage.toString()),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            child: Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.primary.withOpacity(0.3)),
+                          ),
+                          _pageIndicator('إلى صفحة', targetPage.toString()),
+                        ],
                       ),
                     ],
                   ),
                 ),
                 
                 const SizedBox(height: 25),
+                
+                // Progress Section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('تقدمك في الختمة', style: TextStyle(fontFamily: 'Cairo', color: AppColors.textGrey, fontSize: 12, fontWeight: FontWeight.bold)),
-                    Text('%${(khatmah.progress * 100).toInt()}', style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.primary)),
+                    const Text('تقدمك في الختمة', style: TextStyle(fontFamily: 'Cairo', color: AppColors.textGrey, fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text('%${(khatmah.progress * 100).toInt()}', style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.primary)),
                   ],
                 ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: LinearProgressIndicator(
-                    value: khatmah.progress,
-                    minHeight: 10,
-                    backgroundColor: Colors.grey[100],
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  ),
+                const SizedBox(height: 10),
+                Stack(
+                  children: [
+                    Container(
+                      height: 10,
+                      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
+                    ),
+                    FractionallySizedBox(
+                      widthFactor: khatmah.progress.clamp(0.0, 1.0),
+                      child: Container(
+                        height: 10,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [AppColors.primary, Color(0xFF3B8E74)]),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
 
+          // Action Buttons
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             child: Row(
               children: [
                 Expanded(
-                  flex: 2,
+                  flex: 3,
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => MushafReader(
-                            initialPage: khatmah.lastReadPage > 0 ? khatmah.lastReadPage : 1,
+                            initialPage: startPage,
                             khatmahId: khatmah.id,
                           ),
                         ),
@@ -198,15 +230,17 @@ class KhatmahScreen extends StatelessWidget {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       elevation: 0,
                     ),
-                    child: const Text('متابعة القراءة', style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: const Text('متابعة القراءة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
+                  flex: 2,
                   child: OutlinedButton(
                     onPressed: () {
                       controller.finishTodayPortion(khatmah.id);
@@ -218,11 +252,12 @@ class KhatmahScreen extends StatelessWidget {
                       }
                     },
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.primary, width: 1.5),
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      side: BorderSide(color: AppColors.primary.withOpacity(0.3), width: 1.5),
+                      foregroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
-                    child: const Text('أتممت الورد', style: TextStyle(fontFamily: 'Cairo', color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14)),
+                    child: const Text('أتممت الورد', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 14)),
                   ),
                 ),
               ],
@@ -233,33 +268,41 @@ class KhatmahScreen extends StatelessWidget {
     );
   }
 
+  Widget _pageIndicator(String label, String value) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontFamily: 'Cairo', fontSize: 11, color: AppColors.textGrey)),
+        Text(value, style: const TextStyle(fontFamily: 'Cairo', fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textDark)),
+      ],
+    );
+  }
+
   Widget _buildDetailedInfo(IconData icon, String title, String value) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.05), shape: BoxShape.circle),
-          child: Icon(icon, color: AppColors.primary, size: 20),
-        ),
-        const SizedBox(height: 8),
-        Text(title, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey[600])),
-        Text(value, style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.textDark)),
+        Icon(icon, color: AppColors.primary.withOpacity(0.4), size: 18),
+        const SizedBox(height: 6),
+        Text(title, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey[500])),
+        Text(value, style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
       ],
     );
   }
 
   Widget _buildLaggingStatus(KhatmahModel khatmah) {
     if (!khatmah.isLagging) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-        child: const Text('مُلتزم ✅', style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold)),
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.check_circle_rounded, size: 12, color: Colors.green),
+          const SizedBox(width: 4),
+          Text('ملتزم بالجدول', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.green.withOpacity(0.8), fontWeight: FontWeight.bold)),
+        ],
       );
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-      child: Text('متأخر ${khatmah.daysBehind} يوم', style: const TextStyle(fontFamily: 'Cairo', fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
+      child: Text('متأخر ${khatmah.daysBehind} يوم', style: const TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -354,64 +397,76 @@ class KhatmahScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
-          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(35))),
-          padding: EdgeInsets.fromLTRB(25, 20, 25, MediaQuery.of(context).viewInsets.bottom + 20),
+          decoration: const BoxDecoration(
+            color: Colors.white, 
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32))
+          ),
+          padding: EdgeInsets.fromLTRB(25, 12, 25, MediaQuery.of(context).viewInsets.bottom + 30),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)))),
-                const SizedBox(height: 25),
-                const Center(child: Text('بدء رحلة ختم جديدة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.primary))),
-                const SizedBox(height: 20),
-                const Text('المدة الزمنية (بالأيام)', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 14)),
-                const SizedBox(height: 8),
+                Center(child: Container(width: 45, height: 4, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(10)))),
+                const SizedBox(height: 30),
+                const Center(
+                  child: Text(
+                    'بدء رحلة ختم جديدة', 
+                    style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w900, fontSize: 19, color: AppColors.textDark)
+                  )
+                ),
+                const SizedBox(height: 30),
+                const Text('المدة الزمنية (بالأيام)', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark)),
+                const SizedBox(height: 10),
                 TextField(
                   controller: daysController,
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.right,
+                  style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
                   decoration: InputDecoration(
-                    hintText: 'عدد الأيام المتوقع للختم',
+                    hintText: 'مثلاً: 30 يوم',
                     filled: true,
-                    fillColor: Colors.grey[50],
+                    fillColor: const Color(0xFFF7F7F7),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
-                    prefixIcon: const Icon(Icons.timer_outlined, color: AppColors.primary),
+                    prefixIcon: const Icon(Icons.timer_outlined, color: AppColors.primary, size: 20),
                   ),
                 ),
-                const SizedBox(height: 20),
-                const Text('ابدأ من الجزء:', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 14)),
-                const SizedBox(height: 8),
+                const SizedBox(height: 25),
+                const Text('ابدأ من الجزء:', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark)),
+                const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 15),
-                  decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(18)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFF7F7F7), borderRadius: BorderRadius.circular(18)),
                   child: DropdownButton<int>(
                     value: selectedJuz,
                     isExpanded: true,
                     underline: const SizedBox(),
                     icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primary),
-                    items: List.generate(30, (i) => i + 1).map((juz) => DropdownMenuItem(value: juz, child: Text('الجزء $juz', style: const TextStyle(fontFamily: 'Cairo')))).toList(),
+                    items: List.generate(30, (i) => i + 1).map((juz) => DropdownMenuItem(value: juz, child: Text('الجزء $juz', style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)))).toList(),
                     onChanged: (val) => setModalState(() => selectedJuz = val!),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 35),
                 SizedBox(
                   width: double.infinity,
-                  height: 55,
+                  height: 58,
                   child: ElevatedButton(
                     onPressed: () {
                       final List<int> juzPages = [1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 221, 242, 262, 282, 302, 322, 342, 362, 382, 402, 422, 442, 462, 482, 502, 522, 542, 562, 582];
                       controller.addKhatmah("ختمة جديدة", int.tryParse(daysController.text) ?? 30, startPage: juzPages[selectedJuz - 1]);
                       Navigator.pop(context);
                     },
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), elevation: 4, shadowColor: AppColors.primary.withOpacity(0.3)),
-                    child: const Text('توكلت على الله .. ابدأ الختمة', style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary, 
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), 
+                      elevation: 0,
+                    ),
+                    child: const Text('ابدأ الختمة', style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
             ),
           ),
-
         ),
       ),
     );

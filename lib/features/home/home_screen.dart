@@ -753,34 +753,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
             final activeKhatmah = khatmahController.khatmat.first;
 
-            // الصفحة التي سيبدأ منها المستخدم القراءة الآن
-            final startPage = (activeKhatmah.lastReadPage + 1).clamp(1, 604);
-            // الصفحة التي يجب أن يصل إليها اليوم
-            final targetPage = activeKhatmah.targetPageForToday;
-            final khatmahName = activeKhatmah.title;
-
-            // استخدام MushafController للحصول على بيانات دقيقة للآيات
-            final mushafController = Get.find<MushafController>();
-            final pageAyahs = mushafController.getAyahsForPage(startPage);
+            // حماية إضافية للبيانات
+            final int startPage = (activeKhatmah.lastReadPage + 1).clamp(1, 604);
+            int targetPage = 604;
+            try {
+               targetPage = activeKhatmah.targetPageForToday;
+            } catch (_) {}
             
+            final String khatmahName = activeKhatmah.title;
+            final double progress = activeKhatmah.progress;
+
             String firstVerseOfPage = "";
             String surahName = "";
-            
-            if (pageAyahs.isNotEmpty) {
-              final firstAyah = pageAyahs.first;
-              surahName = firstAyah['surahName'] ?? '';
-              // تنظيف النص من علامات الرموز الخاصة بالخط العثماني إذا لزم الأمر
-              // بما أننا نعرضه بخط عادي، يفضل استخدام quran package للنص فقط
-              final sNum = firstAyah['surahNumber'] as int;
-              final vNum = firstAyah['ayahNumber'] as int;
-              firstVerseOfPage = quran.getVerse(sNum, vNum);
-            } else {
-              // Fallback في حال لم يتم تحميل البيانات بعد
-              surahName = quran.getSurahNameArabic(quran.getPageData(startPage).first['surah']);
-              firstVerseOfPage = quran.getVerse(quran.getPageData(startPage).first['surah'], quran.getPageData(startPage).first['verse']);
-            }
 
-            final progress = (activeKhatmah.readPages.length / 604).clamp(0.0, 1.0);
+            try {
+              final pageData = quran.getPageData(startPage);
+              if (pageData.isNotEmpty) {
+                final sNum = pageData.first['surah'] ?? 1;
+                final vNum = pageData.first['start'] ?? 1;
+                surahName = quran.getSurahNameArabic(sNum);
+                firstVerseOfPage = quran.getVerse(sNum, vNum);
+              }
+            } catch (_) {}
 
             return GestureDetector(
               onTap: () => context.push(AppRouter.khatmah),
@@ -902,7 +896,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             Row(
                               children: [
                                 Text(
-                                  'التقدم: ${(progress * 100).toInt()}%',
+                                  'التقدم: ${(activeKhatmah.progress * 100).toInt()}%',
                                   style: const TextStyle(color: Colors.white60, fontSize: 9, fontFamily: 'Cairo'),
                                 ),
                                 const SizedBox(width: 10),
@@ -910,7 +904,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(2),
                                     child: LinearProgressIndicator(
-                                      value: progress,
+                                      value: activeKhatmah.progress,
                                       backgroundColor: Colors.white.withValues(alpha: 0.1),
                                       valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFC9A84C)),
                                       minHeight: 3,

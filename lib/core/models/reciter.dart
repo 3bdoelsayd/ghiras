@@ -17,11 +17,12 @@ class Reciter extends ISuspensionBean {
   factory Reciter.fromJson(Map<String, dynamic> json) {
     return Reciter(
       id: json['id'],
-      name: json['name'],
-      letter: json['letter'],
-      moshaf: (json['moshaf'] as List<dynamic>)
-          .map((moshaf) => Moshaf.fromJson(moshaf))
-          .toList(),
+      name: json['name'] ?? '',
+      letter: json['letter'] ?? '',
+      moshaf: (json['moshaf'] as List<dynamic>?)
+              ?.map((moshaf) => Moshaf.fromJson(moshaf))
+              .toList() ??
+          [],
     );
   }
 

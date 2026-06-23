@@ -18,11 +18,11 @@ class Moshaf {
   factory Moshaf.fromJson(Map<String, dynamic> json) {
     return Moshaf(
       id: json['id'],
-      name: json['name'],
-      server: json['server'],
-      surahTotal: json['surah_total'],
-      moshafType: json['moshaf_type'],
-      surahList: json['surah_list'],
+      name: json['name'] ?? '',
+      server: json['server'] ?? '',
+      surahTotal: json['surah_total'] ?? 0,
+      moshafType: json['moshaf_type'] ?? 0,
+      surahList: json['surah_list'] ?? '',
     );
   }
 

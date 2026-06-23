@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -19,6 +20,8 @@ import 'features/quran/logic/player_bar_bloc/player_bar_bloc.dart';
 import 'features/quran/logic/player_bloc/player_bloc_bloc.dart';
 import 'features/quran/logic/quran_page_player/quran_page_player_bloc.dart';
 import 'features/quran/logic/quran_download_controller.dart';
+
+import 'features/quran/data/quran_database_service.dart';
 
 // ✅ تعريف الـ instances لضمان تهيئتها بعد الـ Background Init
 AudioPlayer get audioPlayer => Get.find<AudioPlayer>();
@@ -45,11 +48,14 @@ void main() async {
     debugPrint("Date Format Init Error: $e");
   }
 
-  // ✅ تشغيل التطبيق فوراً لتقليل وقت الانتظار
-  runApp(const GhirasApp());
+  // ✅ تنفيذ العمليات الثقيلة والتهيئة
+  await _initServicesAsync();
+  
+  // تهيئة قاعدة بيانات القرآن مبكراً لتسريع الفتح لاحقاً
+  QuranDatabaseService.init();
 
-  // ✅ تنفيذ العمليات الثقيلة والتهيئة في الخلفية
-  _initServicesAsync();
+  // ✅ تشغيل التطبيق بعد التهيئة
+  runApp(const GhirasApp());
 }
 
 Future<void> _initServicesAsync() async {
@@ -101,22 +107,29 @@ class GhirasApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(375, 812),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) {
-        return GetMaterialApp.router(
-          title: 'غِراس',
-          theme: AppTheme.lightTheme,
-          routerDelegate: AppRouter.router.routerDelegate,
-          routeInformationParser: AppRouter.router.routeInformationParser,
-          routeInformationProvider: AppRouter.router.routeInformationProvider,
-          backButtonDispatcher: AppRouter.router.backButtonDispatcher,
-          debugShowCheckedModeBanner: false,
-          locale: const Locale('ar'),
-        );
-      },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: playerbarBloc),
+        BlocProvider.value(value: playerPageBloc),
+        BlocProvider.value(value: quranPagePlayerBloc),
+      ],
+      child: ScreenUtilInit(
+        designSize: const Size(375, 812),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (context, child) {
+          return GetMaterialApp.router(
+            title: 'غِراس',
+            theme: AppTheme.lightTheme,
+            routerDelegate: AppRouter.router.routerDelegate,
+            routeInformationParser: AppRouter.router.routeInformationParser,
+            routeInformationProvider: AppRouter.router.routeInformationProvider,
+            backButtonDispatcher: AppRouter.router.backButtonDispatcher,
+            debugShowCheckedModeBanner: false,
+            locale: const Locale('ar'),
+          );
+        },
+      ),
     );
   }
 }

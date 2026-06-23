@@ -86,29 +86,55 @@ class _RecitersPageState extends State<RecitersPage> {
   }
 
   Future<void> fetchReciters() async {
+    if (!mounted) return;
+    setState(() => isLoading = true);
+    
     try {
       final prefs = await SharedPreferences.getInstance();
       const lang  = "ar";
-      if (prefs.getString("reciters-$lang") == null) await getAndStoreRecitersData();
+      
+      String? d1 = prefs.getString("reciters-$lang");
+      String? d2 = prefs.getString("moshaf-$lang");
+      String? d3 = prefs.getString("suwar-$lang");
 
-      final d1 = prefs.getString("reciters-$lang");
-      final d2 = prefs.getString("moshaf-$lang");
-      final d3 = prefs.getString("suwar-$lang");
+      if (d1 == null || d2 == null || d3 == null) {
+        await getAndStoreRecitersData();
+        d1 = prefs.getString("reciters-$lang");
+        d2 = prefs.getString("moshaf-$lang");
+        d3 = prefs.getString("suwar-$lang");
+      }
 
       if (d1 != null && d2 != null && d3 != null) {
-        final data1 = json.decode(d1) as List;
-        final data2 = json.decode(d2)["riwayat"] as List;
-        final data3 = json.decode(d3) as List;
-        setState(() {
-          reciters = data1.map((r) => Reciter.fromJson(r)).toList();
-          reciters.sort((a, b) => a.name.compareTo(b.name));
-          filteredReciters = reciters;
-          rewayat = data2.map((m) => Moshaf.fromJson(m)).toList();
-          suwar   = data3;
-          isLoading = false;
-        });
+        final List<dynamic> data1 = json.decode(d1);
+        final dynamic data2Raw = json.decode(d2);
+        final List<dynamic> data2 = data2Raw is Map ? data2Raw["riwayat"] : data2Raw;
+        final List<dynamic> data3 = json.decode(d3);
+        
+        final List<Reciter> loadedReciters = data1.map((r) => Reciter.fromJson(r)).toList();
+        loadedReciters.sort((a, b) => a.name.toString().compareTo(b.name.toString()));
+
+        // جلب المفضلة بناءً على البيانات الجديدة قبل عمل setState
+        var favJson = getValue("favoriteRecitersList");
+        List<Reciter> favList = [];
+        if (favJson != null) {
+          final List<dynamic> favIds = json.decode(favJson);
+          favList = loadedReciters.where((r) => favIds.contains(r.id)).toList();
+        }
+
+        if (mounted) {
+          setState(() {
+            reciters = loadedReciters;
+            filteredReciters = List.from(loadedReciters);
+            favoriteRecitersList = favList;
+            rewayat = data2.map((m) => Moshaf.fromJson(m)).toList();
+            suwar = data3;
+            isLoading = false;
+          });
+        }
       } else {
-        if (mounted) setState(() => isLoading = false);
+        if (mounted) {
+          setState(() => isLoading = false);
+        }
       }
     } catch (e) {
       debugPrint('Error fetching reciters: $e');
@@ -420,13 +446,37 @@ class _RecitersPageState extends State<RecitersPage> {
 
     if (list.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.search_off_rounded, size: 52.sp, color: _kTextMuted),
-            SizedBox(height: 12.h),
-            Text("لا توجد نتائج", style: TextStyle(fontFamily: 'Cairo', color: _kTextMuted, fontSize: 14.sp)),
-          ],
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 40.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.cloud_off_rounded, size: 64.sp, color: _kTextMuted.withOpacity(0.5)),
+              SizedBox(height: 16.h),
+              Text(
+                "لم نتمكن من تحميل قائمة القراء",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: 'Cairo', color: _kTextPrimary, fontSize: 16.sp, fontWeight: FontWeight.w700),
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                "يرجى التأكد من اتصالك بالإنترنت والمحاولة مرة أخرى",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: 'Cairo', color: _kTextMuted, fontSize: 13.sp),
+              ),
+              SizedBox(height: 24.h),
+              ElevatedButton.icon(
+                onPressed: fetchReciters,
+                icon: Icon(Icons.refresh_rounded, size: 18.sp, color: Colors.white),
+                label: Text("إعادة المحاولة", style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 14.sp, color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kDarkGreen,
+                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -575,12 +625,26 @@ class _RecitersPageState extends State<RecitersPage> {
             ),
             SizedBox(width: 10.w),
             Expanded(
-              child: Text(moshaf.name,
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 12.sp,
-                    color: const Color(0xFF444444),
-                  )),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(moshaf.name,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF444444),
+                      )),
+                  Text(
+                    "${moshaf.surahTotal} سورة ${moshaf.surahTotal == 114 ? '(مصحف كامل)' : ''}",
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 10.sp,
+                      color: moshaf.surahTotal == 114 ? _kDarkGreen : Colors.orange,
+                    ),
+                  ),
+                ],
+              ),
             ),
             Row(
               mainAxisSize: MainAxisSize.min,

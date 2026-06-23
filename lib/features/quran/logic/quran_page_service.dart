@@ -26,9 +26,9 @@ class QuranPageService {
     } else {
       final uri = Uri.parse(
         '$_baseUrl/$pageNumber'
-        '?words=true'
-        '&word_fields=text_uthmani,line_number,char_type_name'
-        '&fields=text_uthmani',
+            '?words=true'
+            '&word_fields=text_uthmani,line_number,char_type_name'
+            '&fields=text_uthmani',
       );
 
       final response = await http.get(uri);
@@ -63,7 +63,7 @@ class QuranPageService {
             charType: (word['char_type_name'] ?? 'word').toString(),
             surahNumber: surahNumber,
             ayahNumber:
-                word['char_type_name'] == 'end' ? verseNumber : null,
+            word['char_type_name'] == 'end' ? verseNumber : null,
           ),
         );
       }

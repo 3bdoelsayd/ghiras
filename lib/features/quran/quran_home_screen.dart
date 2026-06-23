@@ -155,15 +155,15 @@ class _QuranHomeScreenState extends State<QuranHomeScreen>
             hintText: 'بحث عن سورة، جزء، حزب أو رقم صفحة...',
             hintStyle: const TextStyle(color: Colors.grey, fontSize: 14, fontFamily: 'cairo'),
             prefixIcon: const Icon(Icons.search_rounded, color: Colors.grey),
-            suffixIcon: _searchQuery.isNotEmpty 
-              ? IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() => _searchQuery = '');
-                  },
-                ) 
-              : null,
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+              icon: const Icon(Icons.close, size: 18),
+              onPressed: () {
+                _searchController.clear();
+                setState(() => _searchQuery = '');
+              },
+            )
+                : null,
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           ),
@@ -189,26 +189,37 @@ class _SurahTab extends StatelessWidget {
       return name.contains(searchQuery);
     }).toList();
 
-    return ListView(
+    return ListView.builder(
       physics: const BouncingScrollPhysics(),
-      children: [
-        if (lastPage != null && searchQuery.isEmpty) _buildLastReadCard(),
-        if (searchQuery.isNotEmpty && int.tryParse(searchQuery) != null) 
-          _buildPageSearchResult(int.parse(searchQuery)),
-        
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: filteredSurahs.length,
-          separatorBuilder: (context, index) => const Divider(height: 1, color: Colors.black12, indent: 70),
-          itemBuilder: (context, index) {
-            final surahNumber = filteredSurahs[index];
-            final nameArabic = quran.getSurahNameArabic(surahNumber);
-            final nameEnglish = quran.getSurahName(surahNumber);
-            final versesCount = quran.getVerseCount(surahNumber);
-            final startPage = quran.getSurahPages(surahNumber)[0];
+      itemCount: (lastPage != null && searchQuery.isEmpty ? 1 : 0) + 
+                 (searchQuery.isNotEmpty && int.tryParse(searchQuery) != null ? 1 : 0) + 
+                 filteredSurahs.length,
+      itemBuilder: (context, index) {
+        int currentIndex = 0;
 
-            return ListTile(
+        // 1. كارت آخر قراءة
+        if (lastPage != null && searchQuery.isEmpty) {
+          if (index == currentIndex) return _buildLastReadCard();
+          currentIndex++;
+        }
+
+        // 2. نتيجة البحث عن رقم صفحة
+        if (searchQuery.isNotEmpty && int.tryParse(searchQuery) != null) {
+          if (index == currentIndex) return _buildPageSearchResult(int.parse(searchQuery));
+          currentIndex++;
+        }
+
+        // 3. قائمة السور
+        final surahIndex = index - currentIndex;
+        final surahNumber = filteredSurahs[surahIndex];
+        final nameArabic = quran.getSurahNameArabic(surahNumber);
+        final nameEnglish = quran.getSurahName(surahNumber);
+        final versesCount = quran.getVerseCount(surahNumber);
+        final startPage = quran.getSurahPages(surahNumber)[0];
+
+        return Column(
+          children: [
+            ListTile(
               onTap: () => onNavigate(startPage),
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
               leading: Container(
@@ -237,10 +248,11 @@ class _SurahTab extends StatelessWidget {
                 'ص $startPage',
                 style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.bold),
               ),
-            );
-          },
-        ),
-      ],
+            ),
+            const Divider(height: 1, color: Colors.black12, indent: 70),
+          ],
+        );
+      },
     );
   }
 
@@ -296,26 +308,26 @@ class _SurahTab extends StatelessWidget {
                       final settingsBox = Hive.box('settings');
                       final todayKey = 'wird_pages_${intl.DateFormat('yyyy-MM-dd').format(DateTime.now())}';
                       List<int> pagesRead = List<int>.from(settingsBox.get(todayKey, defaultValue: []));
-                      
+
                       // إنهاء الورد اليومي (بإضافة 10 صفحات أو ما تبقى من الجزء)
-                      int pagesToAdd = 10; 
+                      int pagesToAdd = 10;
                       int startPage = page;
-                      
+
                       for (int i = 0; i < pagesToAdd; i++) {
                         int currentPage = startPage + i;
                         if (currentPage <= 604 && !pagesRead.contains(currentPage)) {
                           pagesRead.add(currentPage);
                         }
                       }
-                      
+
                       settingsBox.put(todayKey, pagesRead);
-                      
+
                       int nextLastPage = (page + pagesToAdd).clamp(1, 604);
                       settingsBox.put('last_quran_page', nextLastPage);
-                      
+
                       onRefresh(); // تحديث الواجهة في الأب
 
-                      Get.snackbar('أحسنت!', 'تم إتمام وردك اليومي بنجاح', 
+                      Get.snackbar('أحسنت!', 'تم إتمام وردك اليومي بنجاح',
                         snackPosition: SnackPosition.BOTTOM,
                         backgroundColor: Colors.green,
                         colorText: Colors.white,
@@ -439,7 +451,7 @@ class _HizbTab extends StatelessWidget {
         final juzNum = ((hizbNumber + 1) ~/ 2);
         final juzStartPage = juzPages[juzNum - 1];
         final startPage = hizbNumber % 2 == 0 ? juzStartPage + 10 : juzStartPage;
-        
+
         final surahNum = quran.getSurahAndVersesFromJuz(juzNum).keys.first;
         final surahName = quran.getSurahNameArabic(surahNum);
 
@@ -488,39 +500,39 @@ class _FawasilTab extends StatelessWidget {
 
     return Obx(() => controller.fawasil.isEmpty
         ? Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.bookmark_border_rounded, size: 80, color: AppColors.primary.withOpacity(0.1)),
-                const SizedBox(height: 15),
-                const Text('لا توجد فواصل مضافة', style: TextStyle(fontFamily: 'cairo', color: AppColors.textGrey)),
-                const Text('أضف فاصلاً من داخل المصحف للرجوع إليه لاحقاً', style: TextStyle(fontFamily: 'cairo', fontSize: 12, color: Colors.grey)),
-              ],
-            ),
-          )
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.bookmark_border_rounded, size: 80, color: AppColors.primary.withOpacity(0.1)),
+          const SizedBox(height: 15),
+          const Text('لا توجد فواصل مضافة', style: TextStyle(fontFamily: 'cairo', color: AppColors.textGrey)),
+          const Text('أضف فاصلاً من داخل المصحف للرجوع إليه لاحقاً', style: TextStyle(fontFamily: 'cairo', fontSize: 12, color: Colors.grey)),
+        ],
+      ),
+    )
         : ListView.separated(
-            padding: const EdgeInsets.all(15),
-            itemCount: controller.fawasil.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final fasil = controller.fawasil[index];
-              return Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: ListTile(
-                  onTap: () => onNavigate(fasil['page']),
-                  leading: const Icon(Icons.bookmark_rounded, color: AppColors.primary),
-                  title: Text(fasil['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'cairo')),
-                  subtitle: Text('صفحة ${fasil['page']}', style: const TextStyle(fontFamily: 'cairo', fontSize: 12)),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent, size: 20),
-                    onPressed: () => controller.removeFasil(index),
-                  ),
-                ),
-              );
-            },
-          ));
+      padding: const EdgeInsets.all(15),
+      itemCount: controller.fawasil.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final fasil = controller.fawasil[index];
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: ListTile(
+            onTap: () => onNavigate(fasil['page']),
+            leading: const Icon(Icons.bookmark_rounded, color: AppColors.primary),
+            title: Text(fasil['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'cairo')),
+            subtitle: Text('صفحة ${fasil['page']}', style: const TextStyle(fontFamily: 'cairo', fontSize: 12)),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent, size: 20),
+              onPressed: () => controller.removeFasil(index),
+            ),
+          ),
+        );
+      },
+    ));
   }
 }

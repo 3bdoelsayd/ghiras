@@ -43,8 +43,8 @@ class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
 
         List reciterLinks = surahNumbers.map((e) {
           final surahNum = int.parse(e);
-          final surahName = quran.getSurahNameArabic(surahNum);
-          String fileName = "${event.reciter.name}-${event.moshaf.id}-$surahName.mp3";
+          // ✅ استخدام معرف القارئ والمصحف بدلاً من الأسماء العربية لتجنب مشاكل الملفات
+          String fileName = "reciter_${event.reciter.id}_mushaf_${event.moshaf.id}_surah_$surahNum.mp3";
           File localFile = File("${skoonDir.path}/$fileName");
           
           if (localFile.existsSync()) {
@@ -142,7 +142,7 @@ class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
         
         final surahNum = int.parse(event.suraNumber);
         final surahName = quran.getSurahNameArabic(surahNum);
-        final fileName = "${event.reciter.name}-${event.moshaf.id}-$surahName.mp3";
+        final fileName = "reciter_${event.reciter.id}_mushaf_${event.moshaf.id}_surah_$surahNum.mp3";
         final fullPath = "${skoonDir.path}/$fileName";
 
         if (!File(fullPath).existsSync()) {
@@ -184,7 +184,7 @@ class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
         for (var e in surahNumbers) {
           final surahNum = int.parse(e);
           final surahName = quran.getSurahNameArabic(surahNum);
-          final fileName = "${event.reciter.name}-${event.moshaf.id}-$surahName.mp3";
+          final fileName = "reciter_${event.reciter.id}_mushaf_${event.moshaf.id}_surah_$surahNum.mp3";
           final fullPath = "${skoonDir.path}/$fileName";
 
           if (!File(fullPath).existsSync()) {
@@ -207,9 +207,6 @@ class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
         await audioPlayer.stop();
         playerbarBloc.add(HideBarEvent());
         emit(PlayerBlocInitial());
-      } else if (event is PausePlayer) {
-        await audioPlayer.pause();
-        emit(PlayerBlocPaused());
       }
     });
   }

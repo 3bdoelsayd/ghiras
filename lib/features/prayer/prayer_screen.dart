@@ -159,16 +159,32 @@ class _PrayerScreenState extends State<PrayerScreen> {
   }
 
   Widget _buildLocationInfo() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.location_city_rounded, size: 16, color: AppColors.textGrey),
-        const SizedBox(width: 8),
-        Obx(() => Text(
-          _prayerService.currentCity.value,
-          style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, color: AppColors.textGrey, fontWeight: FontWeight.bold),
-        )),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.location_on_rounded, size: 18, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Obx(() => Text(
+              _prayerService.currentCity.value,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'Cairo', 
+                fontSize: 14, 
+                color: AppColors.primary, 
+                fontWeight: FontWeight.w700
+              ),
+            )),
+          ),
+        ],
+      ),
     );
   }
 

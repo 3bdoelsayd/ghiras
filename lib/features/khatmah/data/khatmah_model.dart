@@ -5,6 +5,7 @@ class KhatmahModel {
   final String title;
   final DateTime startDate;
   final int durationDays;
+  final int initialPage;
   int lastReadPage;
   final List<int> readPages;
 
@@ -12,7 +13,8 @@ class KhatmahModel {
     required this.id,
     required this.title,
     required this.startDate,
-    required this.durationDays,
+    this.durationDays = 30,
+    this.initialPage = 1,
     this.lastReadPage = 0,
     this.readPages = const [],
   });
@@ -23,19 +25,30 @@ class KhatmahModel {
       'title': title,
       'startDate': startDate.toIso8601String(),
       'durationDays': durationDays,
+      'initialPage': initialPage,
       'lastReadPage': lastReadPage,
       'readPages': readPages,
     };
   }
 
   factory KhatmahModel.fromMap(Map<String, dynamic> map) {
+    // وظيفة مساعدة لتحويل أي قيمة لرقم صحيح بأمان
+    int asInt(dynamic value, int defaultValue) {
+      if (value == null) return defaultValue;
+      if (value is int) return value;
+      return int.tryParse(value.toString()) ?? defaultValue;
+    }
+
     return KhatmahModel(
-      id: map['id'],
-      title: map['title'],
-      startDate: DateTime.parse(map['startDate']),
-      durationDays: map['durationDays'],
-      lastReadPage: map['lastReadPage'] ?? 0,
-      readPages: List<int>.from(map['readPages'] ?? []),
+      id: (map['id'] ?? '').toString(),
+      title: (map['title'] ?? 'ختمة جديدة').toString(),
+      startDate: map['startDate'] != null 
+          ? DateTime.tryParse(map['startDate'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      durationDays: asInt(map['durationDays'], 30),
+      initialPage: asInt(map['initialPage'], 1),
+      lastReadPage: asInt(map['lastReadPage'], 0),
+      readPages: map['readPages'] != null ? List<int>.from(map['readPages']) : [],
     );
   }
 
@@ -43,29 +56,53 @@ class KhatmahModel {
 
   factory KhatmahModel.fromJson(String source) => KhatmahModel.fromMap(json.decode(source));
 
-  double get progress => readPages.length / 604;
+  double get progress {
+    try {
+      int total = (605 - initialPage);
+      if (total <= 0) total = 604;
+      return (readPages.length / total).clamp(0.0, 1.0);
+    } catch (_) {
+      return 0.0;
+    }
+  }
   
-  int get pagesPerDay => (604 / durationDays).ceil();
+  int get pagesPerDay {
+    try {
+      int days = durationDays > 0 ? durationDays : 30;
+      int totalPages = 605 - initialPage;
+      if (totalPages <= 0) totalPages = 604;
+      int ppd = (totalPages / days).ceil();
+      return ppd > 0 ? ppd : 1;
+    } catch (_) {
+      return 20;
+    }
+  }
 
-  int get targetPageForToday => (lastReadPage + pagesPerDay).clamp(1, 604);
+  int get targetPageForToday {
+    try {
+      int ppd = pagesPerDay;
+      int portionsCompleted = (readPages.length / (ppd > 0 ? ppd : 20)).floor();
+      int target = initialPage + ((portionsCompleted + 1) * ppd) - 1;
+      return target.clamp(1, 604);
+    } catch (_) {
+      return (lastReadPage + 20).clamp(1, 604);
+    }
+  }
 
   int get remainingDays {
-    int pagesLeft = 604 - lastReadPage;
-    if (pagesLeft <= 0) return 0;
-    int days = (pagesLeft / pagesPerDay).ceil();
-    return days;
+    try {
+      int ppd = pagesPerDay;
+      int pagesLeft = 604 - lastReadPage;
+      if (pagesLeft <= 0) return 0;
+      return (pagesLeft / (ppd > 0 ? ppd : 1)).ceil();
+    } catch (_) {
+      return 30;
+    }
   }
 
   int get daysSinceStart => DateTime.now().difference(startDate).inDays + 1;
-
   int get expectedPagesRead => (daysSinceStart * pagesPerDay).clamp(0, 604);
-
-  int get pagesBehind {
-    int behind = expectedPagesRead - readPages.length;
-    return behind < 0 ? 0 : behind;
-  }
-
-  int get daysBehind => (pagesBehind / pagesPerDay).ceil();
-
+  int get pagesBehind => (expectedPagesRead - readPages.length).clamp(0, 604);
+  int get daysBehind => (pagesBehind / (pagesPerDay > 0 ? pagesPerDay : 1)).ceil();
   bool get isLagging => pagesBehind > 0;
 }

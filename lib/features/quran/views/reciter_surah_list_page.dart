@@ -113,8 +113,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
 
   bool _isDownloaded(int surahNum) {
     if (appDirPath == null) return false;
-    final fn =
-        "${widget.reciter.name}-${widget.mushaf.id}-${quran.getSurahNameArabic(surahNum)}.mp3";
+    final fn = "reciter_${widget.reciter.id}_mushaf_${widget.mushaf.id}_surah_$surahNum.mp3";
     return File("$appDirPath$fn").existsSync();
   }
 
@@ -431,18 +430,22 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
               ),
             ),
             SizedBox(width: 8.w),
-            _bigBtn(
-              label: "تنزيل الكل",
-              icon: Icons.download_rounded,
-              bg: _kCard,
-              labelColor: const Color(0xFF555555),
-              iconColor: _kDlIcon,
-              border: _kBorder,
-              onTap: () => Get.find<QuranDownloadController>().downloadAllSurahs(
-                reciter: widget.reciter,
-                moshaf: widget.mushaf,
-              ),
-            ),
+            Obx(() {
+              final downloadController = Get.find<QuranDownloadController>();
+              final isDownloadingAll = downloadController.isDownloadingAll.value;
+              return _bigBtn(
+                label: isDownloadingAll ? "إيقاف التحميل" : "تنزيل الكل",
+                icon: isDownloadingAll ? Icons.stop_circle_rounded : Icons.download_rounded,
+                bg: isDownloadingAll ? Colors.red[50]! : _kCard,
+                labelColor: isDownloadingAll ? Colors.red : const Color(0xFF555555),
+                iconColor: isDownloadingAll ? Colors.red : _kDlIcon,
+                border: isDownloadingAll ? Colors.red[200] : _kBorder,
+                onTap: () => downloadController.downloadAllSurahs(
+                  reciter: widget.reciter,
+                  moshaf: widget.mushaf,
+                ),
+              );
+            }),
           ],
         ),
         SizedBox(height: 10.h),
@@ -605,25 +608,49 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                 ),
                 SizedBox(width: 4.w),
                 Obx(() {
-                  // ضمان مراقبة الخريطة بشكل صريح
-                  final isMapEmpty = downloadController.downloadProgress.isEmpty;
+                  final status = downloadController.downloadStatus[fileKey];
                   final progress = downloadController.downloadProgress[fileKey];
 
-                  if (progress != null) {
-                    return Container(
-                      width: 28.w, height: 28.h,
-                      padding: EdgeInsets.all(6.r),
-                      child: CircularProgressIndicator(
-                        value: progress / 100,
-                        strokeWidth: 2,
-                        color: _kDlIcon,
+                  if (status == 'downloading' || status == 'paused') {
+                    return GestureDetector(
+                      onTap: () => downloadController.downloadSurah(
+                        reciter: widget.reciter,
+                        moshaf: widget.mushaf,
+                        surahNum: n,
+                      ),
+                      child: Container(
+                        width: 28.w, height: 28.h,
+                        padding: EdgeInsets.all(6.r),
+                        decoration: BoxDecoration(
+                          color: status == 'paused' ? Colors.orange[50] : Colors.blue[50],
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            CircularProgressIndicator(
+                              value: (progress ?? 0) / 100,
+                              strokeWidth: 2,
+                              color: status == 'paused' ? Colors.orange : Colors.blue,
+                            ),
+                            Icon(
+                              status == 'paused' ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                              size: 10.sp,
+                              color: status == 'paused' ? Colors.orange : Colors.blue,
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   }
+                  
+                  // إذا اكتمل التحميل الآن أو كان موجوداً مسبقاً
+                  final isCurrentlyDl = isDl || status == 'completed';
+                  
                   return _actionBtn(
-                    bg: isDl ? _kDlDoneBg : _kDlBg,
-                    icon: isDl ? Icons.check_rounded : Icons.download_rounded,
-                    color: isDl ? _kDlDoneIcon : _kDlIcon,
+                    bg: isCurrentlyDl ? _kDlDoneBg : _kDlBg,
+                    icon: isCurrentlyDl ? Icons.check_rounded : Icons.download_rounded,
+                    color: isCurrentlyDl ? _kDlDoneIcon : _kDlIcon,
                     onTap: () => _handleDownload(n),
                   );
                 }),

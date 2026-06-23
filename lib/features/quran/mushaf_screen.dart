@@ -17,17 +17,32 @@ class MushafScreen extends StatefulWidget {
 
 class _MushafScreenState extends State<MushafScreen> {
   late PageController _pageController;
+  bool _showAppBar = true;
+  bool _isTransitionFinished = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: widget.initialPage - 1);
-    final controller = Get.put(MushafController());
-    Get.put(QuranAudioController());
+    
+    // استخدام النسخ الموجودة بالفعل لتقليل استهلاك المعالج عند الفتح
+    final controller = Get.find<MushafController>();
+    if (!Get.isRegistered<QuranAudioController>()) {
+      Get.put(QuranAudioController());
+    }
+    
     controller.currentPage.value = widget.initialPage;
-    controller.loadCurrentPageFont();
 
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    // تأجيل بناء الصفحات الثقيلة قليلاً لضمان نعومة حركة الانتقال
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _isTransitionFinished = true;
+        });
+      }
+    });
   }
 
   @override
@@ -44,10 +59,14 @@ class _MushafScreenState extends State<MushafScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
+      appBar: _showAppBar
+          ? AppBar(
+        backgroundColor: const Color(0xFFFEFBF6),
+        elevation: 0,
+        foregroundColor: Colors.black,
         title: Obx(() => Text(
           'الصفحة ${controller.currentPage.value}',
-          style: const TextStyle(fontSize: 18),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'cairo'),
         )),
         centerTitle: true,
         actions: [
@@ -62,50 +81,58 @@ class _MushafScreenState extends State<MushafScreen> {
             onPressed: controller.toggleTheme,
           )),
         ],
-      ),
-      body: Stack(
-        children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 500),
-              child: PageView.builder(
-                controller: _pageController,
-                reverse: false,
-                itemCount: 605,
-                physics: const BouncingScrollPhysics(),
-                allowImplicitScrolling: true,
-                onPageChanged: (index) {
-                  if (index == 0) {
-                    controller.currentPage.value = 0;
-                  } else {
-                    controller.onPageChanged(index - 1);
-                  }
-                },
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return _buildCoverPage();
-                  }
-                  return RepaintBoundary(
-                    child: QuranPageWidget(pageNumber: index),
-                  );
-                },
-              ),
-            ),
-          ),
-          Obx(() => audioController.currentSurah.value != 0
-              ? Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
-            child: Center(
+      )
+          : null,
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => setState(() => _showAppBar = !_showAppBar),
+        child: Stack(
+          children: [
+            Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 460),
-                child: _buildAudioPlayer(audioController),
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: PageView.builder(
+                  controller: _pageController,
+                  reverse: false,
+                  itemCount: 605,
+                    physics: const BouncingScrollPhysics(),
+                    allowImplicitScrolling: false,
+                    onPageChanged: (index) {
+                      if (index == 0) {
+                        controller.currentPage.value = 0;
+                      } else {
+                        controller.onPageChanged(index - 1);
+                      }
+                    },
+                    itemBuilder: (context, index) {
+                      if (!_isTransitionFinished) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (index == 0) {
+                        return _buildCoverPage();
+                      }
+                      return RepaintBoundary(
+                        child: QuranPageWidget(pageNumber: index),
+                      );
+                    },
+                  ),
               ),
             ),
-          )
-              : const SizedBox.shrink()),
-        ],
+            Obx(() => audioController.currentSurah.value != 0
+                ? Positioned(
+              bottom: 20,
+              left: 20,
+              right: 20,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: _buildAudioPlayer(audioController),
+                ),
+              ),
+            )
+                : const SizedBox.shrink()),
+          ],
+        ),
       ),
     );
   }
@@ -223,7 +250,7 @@ class _MushafScreenState extends State<MushafScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('حجم الخط',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+                style: TextStyle(fontWeight: FontWeight.w900)),
             Obx(() => Slider(
               value: controller.fontSize.value,
               min: 18,

@@ -45,8 +45,12 @@ class PrayerService extends GetxController {
             List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
             if (placemarks.isNotEmpty) {
               Placemark place = placemarks[0];
-              cityName = "${place.locality ?? place.subAdministrativeArea ?? ''}, ${place.country ?? ''}".trim();
-              if (cityName.startsWith(',')) cityName = cityName.substring(1).trim();
+              List<String> parts = [];
+              if (place.subLocality != null && place.subLocality!.isNotEmpty) parts.add(place.subLocality!);
+              if (place.locality != null && place.locality!.isNotEmpty) parts.add(place.locality!);
+              if (place.country != null && place.country!.isNotEmpty) parts.add(place.country!);
+              
+              cityName = parts.join("، "); // استخدام الفاصلة العربية
               if (cityName.isEmpty) cityName = "موقعي الحالي";
             } else {
               cityName = "موقعي الحالي";
