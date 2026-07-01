@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../islamic_basics/views/lesson_list_screen.dart';
 import 'data/azkar_data.dart';
 import 'data/athkar_model.dart';
 import 'athkar_details_screen.dart';
@@ -74,6 +75,12 @@ class _AthkarScreenState extends State<AthkarScreen> {
                       Icons.nights_stay_rounded,
                       [const Color(0xFF2C3E50), const Color(0xFF4B79A1)],
                     ),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // --- قسم أساسيات الإسلام ---
+                  if (_searchQuery.isEmpty) ...[
+                    _buildIslamicBasicsCard(),
                     const SizedBox(height: 35),
                   ],
 
@@ -262,6 +269,74 @@ class _AthkarScreenState extends State<AthkarScreen> {
       MaterialPageRoute(
         builder: (context) => AthkarDetailsScreen(
           category: AthkarCategory.fromJson(item),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIslamicBasicsCard() {
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const LessonListScreen()),
+      ),
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(minHeight: 180),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1ABC9C), Color(0xFF16A085)],
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+          ),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1ABC9C).withValues(alpha: 0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            )
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: Stack(
+            children: [
+              Positioned(
+                left: -20,
+                bottom: -20,
+                child: Icon(Icons.menu_book_rounded, size: 150, color: Colors.white.withValues(alpha: 0.15)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(25),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                      child: const Icon(Icons.library_books_rounded, color: Colors.white, size: 30),
+                    ),
+                    const SizedBox(height: 15),
+                    const Text(
+                      'أساسيات الإسلام',
+                      style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                    ),
+                    const Text(
+                      'تعلم أركان دينك وعباداتك بطريقة تفاعلية',
+                      style: TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Cairo'),
+                    ),
+                  ],
+                ),
+              ),
+              const Positioned(
+                top: 25,
+                left: 25,
+                child: Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 20),
+              ),
+            ],
+          ),
         ),
       ),
     );
