@@ -23,6 +23,11 @@ class AyahOptionsSheet extends StatefulWidget {
   });
 
   static void show(BuildContext context, int surah, int ayah, String text) {
+    // إخفاء التظليل عند فتح القائمة
+    if (Get.isRegistered<MushafController>()) {
+      Get.find<MushafController>().selectedAyahKey.value = '';
+    }
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -140,18 +145,25 @@ class _AyahOptionsSheetState extends State<AyahOptionsSheet> {
           ),
 
           _buildRowOption(
-            icon: mushaf.hasAyahBookmark(widget.surahNumber, widget.ayahNumber)
+            icon: (mushaf.hasAyahBookmark(widget.surahNumber, widget.ayahNumber) || 
+                   mushaf.isBookmarked(widget.surahNumber, widget.ayahNumber))
                 ? Icons.bookmark_added_rounded
                 : Icons.bookmark_add_rounded,
-            title: mushaf.hasAyahBookmark(widget.surahNumber, widget.ayahNumber)
+            title: (mushaf.hasAyahBookmark(widget.surahNumber, widget.ayahNumber) || 
+                   mushaf.isBookmarked(widget.surahNumber, widget.ayahNumber))
                 ? 'إزالة العلامة'
                 : 'حفظ علامة وقوف',
             color: Colors.redAccent,
             isDark: isDark,
             onTap: () {
               Navigator.pop(context);
-              if (mushaf.hasAyahBookmark(widget.surahNumber, widget.ayahNumber)) {
+              if (mushaf.hasAyahBookmark(widget.surahNumber, widget.ayahNumber) || 
+                  mushaf.isBookmarked(widget.surahNumber, widget.ayahNumber)) {
                 mushaf.removeAyahBookmark(widget.surahNumber, widget.ayahNumber);
+                Get.snackbar('تمت الإزالة', 'تم إزالة العلامة بنجاح',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.redAccent.withOpacity(0.8),
+                    colorText: Colors.white);
               } else {
                 BookmarksDialog.show(context, widget.surahNumber, widget.ayahNumber);
               }

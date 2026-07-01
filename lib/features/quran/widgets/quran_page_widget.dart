@@ -289,7 +289,15 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
 
       return GestureDetector(
         onLongPressStart: (_) => controller.selectedAyahKey.value = ayahKey,
-        onLongPressEnd: (_) => controller.selectedAyahKey.value = '',
+        onLongPressEnd: (_) {
+          // تأخير بسيط لضمان ظهور القائمة قبل إزالة التظليل
+          Future.delayed(const Duration(milliseconds: 200), () {
+            if (controller.selectedAyahKey.value == ayahKey) {
+              controller.selectedAyahKey.value = '';
+            }
+          });
+        },
+        onLongPressCancel: () => controller.selectedAyahKey.value = '',
         onLongPress: () => AyahOptionsSheet.show(
           context,
           word.surah,
@@ -383,6 +391,13 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
             controller.selectedAyahKey.value = ayahKey;
           }
           ..onLongPressEnd = (_) {
+            Future.delayed(const Duration(milliseconds: 200), () {
+              if (controller.selectedAyahKey.value == ayahKey) {
+                controller.selectedAyahKey.value = '';
+              }
+            });
+          }
+          ..onLongPressCancel = () {
             controller.selectedAyahKey.value = '';
           }
           ..onLongPress = () => AyahOptionsSheet.show(

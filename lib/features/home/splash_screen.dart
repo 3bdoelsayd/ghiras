@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/app_router.dart';
@@ -11,25 +13,33 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+  late AnimationController _logoController;
+  late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    
+    _logoController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1500),
     );
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOutQuart,
-    );
-    _controller.forward();
 
-    // تقليل وقت الانتظار وجعل الانتقال أكثر سلاسة
-    Future.delayed(const Duration(milliseconds: 1800), () {
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.easeOutBack),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: const Interval(0.0, 0.5, curve: Curves.easeIn)),
+    );
+
+    _logoController.forward();
+    FlutterNativeSplash.remove();
+
+    // زيادة الوقت قليلاً لرؤية الأنميشن بوضوح
+    Future.delayed(const Duration(milliseconds: 2000), () {
       if (mounted) {
         context.go(AppRouter.home);
       }
@@ -38,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
-    _controller.dispose();
+    _logoController.dispose();
     super.dispose();
   }
 
@@ -48,79 +58,86 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          // Elegant Abstract Background
+          // Background Decorations
           Positioned(
-            top: -150,
-            right: -100,
-            child: CircleAvatar(
-              radius: 200,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.03),
+            top: -100,
+            right: -50,
+            child: Lottie.asset(
+              'assets/images/splash_top.json',
+              width: 300,
+              repeat: true,
             ),
           ),
-          Positioned(
-            bottom: -150,
-            left: -100,
-            child: CircleAvatar(
-              radius: 250,
-              backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
-            ),
-          ),
+          
           Center(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Premium Logo
-                  Container(
-                    height: 140,
-                    width: 140,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(45),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.15),
-                          blurRadius: 35,
-                          offset: const Offset(0, 15),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(45),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: SizedBox(
+                      height: 120, // حجم الزهرة
+                      width: 120,
                       child: Image.asset(
                         'assets/images/logo.png',
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 40),
-                  Text(
-                    AppStrings.appName,
-                    style: const TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.textDark,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      AppStrings.splashSlogan,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w500,
+                ),
+                const SizedBox(height: 20),
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Column(
+                    children: [
+                      Text(
+                        AppStrings.appName,
+                        style: const TextStyle(
+                          fontSize: 38,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.primary,
+                          fontFamily: 'Cairo',
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          AppStrings.splashSlogan,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+          
+          // Bottom loading or footer
+          Positioned(
+            bottom: 50,
+            left: 0,
+            right: 0,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: const Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
               ),
             ),
           ),
@@ -129,3 +146,4 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     );
   }
 }
+

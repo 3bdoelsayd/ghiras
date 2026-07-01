@@ -299,11 +299,43 @@ class _MushafReaderState extends State<MushafReader> {
         iconTheme:
         IconThemeData(color: isDark ? Colors.white : AppColors.textDark, size: 20),
         actions: [
-          IconButton(
-            icon: Icon(Icons.bookmark_add_outlined,
-                color: isDark ? Colors.white : AppColors.textDark),
-            onPressed: () => _showAddFasilDialog(),
-          ),
+          Obx(() {
+            final controller = Get.find<MushafController>();
+            final bool isSaved = controller.hasFasil(_currentPage);
+            
+            return IconButton(
+              icon: Icon(
+                isSaved ? Icons.bookmark_added_rounded : Icons.bookmark_add_outlined,
+                color: isSaved 
+                    ? Colors.green 
+                    : (isDark ? Colors.white : AppColors.textDark),
+              ),
+              onPressed: () {
+                final info = PageSurahMap.getPageInfo(_currentPage);
+                final surahName = info?['surah'] ?? 'صفحة';
+                
+                if (isSaved) {
+                  controller.removeFasilByPage(_currentPage);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('تم إزالة الفاصل', textAlign: TextAlign.center),
+                      backgroundColor: Colors.redAccent,
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                } else {
+                  controller.addFasil(_currentPage, 'سورة $surahName (ص $_currentPage)');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('تم حفظ الفاصل بنجاح', textAlign: TextAlign.center),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                }
+              },
+            );
+          }),
         ],
         title: Column(
           children: [

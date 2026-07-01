@@ -7,6 +7,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:get/get.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/app_router.dart';
 import 'core/utils/simple_bloc_observer.dart';
@@ -30,36 +31,37 @@ late PlayerBlocBloc playerPageBloc;
 late QuranPagePlayerBloc quranPagePlayerBloc;
 
 void main() async {
+  // 1. ضمان استقرار المحرك
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ تهيئة Hive سريعة جداً وضرورية لبداية التشغيل
-  try {
-    await Hive.initFlutter();
-    await Hive.openBox('settings');
-    await initHiveValues();
-  } catch (e) {
-    debugPrint("Hive Init Error: $e");
-  }
+  // 2. تهيئة Hive
+  await Hive.initFlutter();
+  await Hive.openBox('settings');
+  await initHiveValues();
 
-  // ✅ تهيئة التنسيقات الزمنية قبل التشغيل لضمان عدم وجود أخطاء في واجهة التاريخ
-  try {
-    await initializeDateFormatting('ar', null);
-  } catch (e) {
-    debugPrint("Date Format Init Error: $e");
-  }
+  // 3. تهيئة سريعة للـ Blocs
+  playerbarBloc = PlayerBarBloc();
+  playerPageBloc = PlayerBlocBloc();
+  quranPagePlayerBloc = QuranPagePlayerBloc();
+  Bloc.observer = SimpleBlocObserver();
 
-  // ✅ تنفيذ العمليات الثقيلة والتهيئة
-  await _initServicesAsync();
-  
-  // تهيئة قاعدة بيانات القرآن مبكراً لتسريع الفتح لاحقاً
-  QuranDatabaseService.init();
-
-  // ✅ تشغيل التطبيق بعد التهيئة
+  // 4. تشغيل التطبيق فوراً لفتح الـ Splash الخاصة بك
   runApp(const GhirasApp());
+
+  // 5. تنفيذ العمليات الثقيلة في الخلفية
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _initServicesBackground();
+  });
 }
 
-Future<void> _initServicesAsync() async {
-  // تهيئة الـ Audio Service
+Future<void> _initServicesBackground() async {
+  // تهيئة التاريخ
+  initializeDateFormatting('ar', null);
+
+  // تهيئة قاعدة البيانات
+  QuranDatabaseService.init();
+
+  // تهيئة الصوت (ثقيلة)
   try {
     await JustAudioBackground.init(
       androidNotificationChannelId: 'com.example.ghiras.audio',
@@ -71,21 +73,13 @@ Future<void> _initServicesAsync() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
   } catch (e) {
-    debugPrint("JustAudioBackground Init Error: $e");
+    debugPrint("Background Audio Init Error: $e");
   }
 
-  // إنشاء نسخة واحدة فقط من الـ Player
+  // تسجيل الخدمات
   if (!Get.isRegistered<AudioPlayer>()) {
     Get.put(AudioPlayer(), permanent: true);
   }
-
-  // إنشاء الـ Blocs
-  playerbarBloc = PlayerBarBloc();
-  playerPageBloc = PlayerBlocBloc();
-  quranPagePlayerBloc = QuranPagePlayerBloc();
-  Bloc.observer = SimpleBlocObserver();
-
-  // تهيئة الخدمات
   if (!Get.isRegistered<MushafController>()) {
     Get.put(MushafController(), permanent: true);
   }

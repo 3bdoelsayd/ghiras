@@ -82,6 +82,9 @@ class MushafController extends GetxController {
   }
 
   void addAyahBookmark(int surah, int ayah, String name, Color color) {
+    // إزالة أي علامة موجودة لنفس الآية لتجنب التكرار
+    ayahBookmarks.removeWhere((b) => b['surah'] == surah && b['ayah'] == ayah);
+
     ayahBookmarks.add({
       'surah': surah,
       'ayah': ayah,
@@ -93,10 +96,28 @@ class MushafController extends GetxController {
   }
 
   void removeAyahBookmark(int surah, int ayah) {
+    // 1. إزالة من قائمة العلامات الملونة
     ayahBookmarks.removeWhere(
           (b) => b['surah'] == surah && b['ayah'] == ayah,
     );
+    
+    // 2. إذا كانت هي نفسها علامة الوقوف (البرتقالية)، قم بإزالتها أيضاً
+    if (bookmarkedSurah.value == surah && bookmarkedAyah.value == ayah) {
+      bookmarkedSurah.value = 0;
+      bookmarkedAyah.value = 0;
+      final box = Hive.box('settings');
+      box.put('bookmarked_surah', 0);
+      box.put('bookmarked_ayah', 0);
+    }
+    
+    // 3. التأكد من إزالة أي تظليل اختيار حالي (الناتج عن الضغط المطول)
+    selectedAyahKey.value = '';
+    
+    // 4. تحديث الحالة لضمان إعادة بناء الواجهة
     _saveAyahBookmarks();
+    ayahBookmarks.refresh();
+    bookmarkedSurah.refresh();
+    bookmarkedAyah.refresh();
   }
 
   void _saveAyahBookmarks() =>
@@ -175,13 +196,25 @@ class MushafController extends GetxController {
   }
 
   void addFasil(int page, String name) {
-    fawasil.add({
+    // إزالة الفاصل القديم لنفس الصفحة إذا وجد لتجنب التكرار
+    fawasil.removeWhere((f) => f['page'] == page);
+    
+    fawasil.insert(0, {
       'page': page,
       'name': name,
       'date': DateTime.now().toIso8601String(),
     });
     _saveFawasil();
+    fawasil.refresh();
   }
+
+  void removeFasilByPage(int page) {
+    fawasil.removeWhere((f) => f['page'] == page);
+    _saveFawasil();
+    fawasil.refresh();
+  }
+
+  bool hasFasil(int page) => fawasil.any((f) => f['page'] == page);
 
   void removeFasil(int index) {
     fawasil.removeAt(index);

@@ -4,6 +4,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class NotificationService extends GetxService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -19,14 +20,14 @@ class NotificationService extends GetxService {
     tz_data.initializeTimeZones();
     
     try {
-      // ضبط المنطقة الزمنية للقاهرة كافتراضي للتطبيق (مصر)
-      // لضمان دقة مواعيد التنبيهات
       tz.setLocalLocation(tz.getLocation('Africa/Cairo'));
     } catch (e) {
       debugPrint("Could not set local timezone: $e");
     }
     
-    // إعداد قناة الأذكار
+    // طلب كافة الصلاحيات الضرورية لضمان عمل الأذان
+    await _requestFullPermissions();
+
     const AndroidNotificationChannel dailyChannel = AndroidNotificationChannel(
       'daily_reminders', 
       'تذكيرات الأذكار والورد', 
@@ -35,7 +36,6 @@ class NotificationService extends GetxService {
       enableVibration: true,
     );
 
-    // إعداد قناة الأذان مع الصوت المخصص (V2 لضمان تحديث الإعدادات)
     const AndroidNotificationChannel prayerChannel = AndroidNotificationChannel(
       'prayer_v2',
       'الأذان وتنبيهات الصلاة',
@@ -66,16 +66,25 @@ class NotificationService extends GetxService {
       },
     );
 
-    // طلب الصلاحيات لنظام أندرويد 13 فما فوق
-    await _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
-        
-    await _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestExactAlarmsPermission();
-
     updateScheduledNotifications();
+  }
+
+  Future<void> _requestFullPermissions() async {
+    // 1. صلاحية الإشعارات (لأندرويد 13+)
+    if (await Permission.notification.isDenied) {
+      await Permission.notification.request();
+    }
+
+    // 2. صلاحية التنبيهات الدقيقة (لأندرويد 12+)
+    final androidPlugin = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    
+    await androidPlugin?.requestExactAlarmsPermission();
+
+    // 3. تجاهل تحسين البطارية (هام جداً للأذان)
+    if (await Permission.ignoreBatteryOptimizations.isDenied) {
+      await Permission.ignoreBatteryOptimizations.request();
+    }
   }
 
   Future<void> updateScheduledNotifications() async {

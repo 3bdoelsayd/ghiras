@@ -27,53 +27,59 @@ class PrayerService extends GetxController {
       isLoading.value = true;
       
       bool useManual = _settingsBox.get('useManualLocation', defaultValue: false);
-      double lat, lng;
-      String cityName;
+      double? lat = _settingsBox.get('lastLat');
+      double? lng = _settingsBox.get('lastLng');
+      String? cityName = _settingsBox.get('lastCity');
 
       if (useManual) {
         lat = _settingsBox.get('manualLat', defaultValue: 30.0444);
         lng = _settingsBox.get('manualLng', defaultValue: 31.2357);
         cityName = _settingsBox.get('manualCity', defaultValue: "القاهرة");
-      } else {
+      } else if (lat == null || lng == null) {
+        // إذا لم يكن هناك موقع محفوظ (أول مرة)، نقوم بتحديده
         try {
           Position position = await _getGeoLocation();
           lat = position.latitude;
           lng = position.longitude;
           
-          // ✅ محاولة جلب العنوان التفصيلي
           try {
             List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
             if (placemarks.isNotEmpty) {
               Placemark place = placemarks[0];
-              List<String> parts = [];
-              if (place.subLocality != null && place.subLocality!.isNotEmpty) parts.add(place.subLocality!);
-              if (place.locality != null && place.locality!.isNotEmpty) parts.add(place.locality!);
-              if (place.country != null && place.country!.isNotEmpty) parts.add(place.country!);
-              
-              cityName = parts.join("، "); // استخدام الفاصلة العربية
-              if (cityName.isEmpty) cityName = "موقعي الحالي";
-            } else {
-              cityName = "موقعي الحالي";
+              cityName = place.locality ?? place.subLocality ?? place.administrativeArea ?? "موقعي";
             }
           } catch (e) {
-            cityName = "موقعي الحالي";
+            cityName = "موقعي";
           }
+
+          // حفظ الموقع للمرات القادمة
+          _settingsBox.put('lastLat', lat);
+          _settingsBox.put('lastLng', lng);
+          _settingsBox.put('lastCity', cityName);
           
         } catch (e) {
           lat = 30.0444;
           lng = 31.2357;
-          cityName = "القاهرة (افتراضي)";
+          cityName = "القاهرة";
         }
       }
 
-      currentCity.value = cityName;
-      _calculatePrayerTimes(lat, lng);
+      currentCity.value = cityName ?? "القاهرة";
+      _calculatePrayerTimes(lat ?? 30.0444, lng ?? 31.2357);
       _updateNextPrayer();
     } catch (e) {
       debugPrint("Prayer Update Error: $e");
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // إضافة دالة لتحديث الموقع يدوياً إذا رغب المستخدم (مثلاً عند السفر)
+  Future<void> refreshLocation() async {
+    _settingsBox.delete('lastLat');
+    _settingsBox.delete('lastLng');
+    _settingsBox.delete('lastCity');
+    await updateSettings();
   }
 
   Future<Position> _getGeoLocation() async {
@@ -135,8 +141,8 @@ class PrayerService extends GetxController {
     final notificationService = Get.find<NotificationService>();
     final box = Hive.box('settings');
 
-    // جدولة أذان اليوم وغداً لضمان استمرارية التنبيهات
-    for (int i = 0; i <= 1; i++) {
+    // جدولة أذان لمدة 7 أيام قادمة لضمان استمرارية التنبيهات حتى لو لم يفتح المستخدم التطبيق يومياً
+    for (int i = 0; i <= 7; i++) {
       final date = DateTime.now().add(Duration(days: i));
       final coordinates = prayerTimes.value!.coordinates;
       final params = prayerTimes.value!.calculationParameters;
@@ -156,16 +162,18 @@ class PrayerService extends GetxController {
       };
 
       adhans.forEach((name, time) {
-        // التحقق مما إذا كان الأذان مفعلاً لهذا الوقت
         bool isEnabled = box.get('athan_$name', defaultValue: true);
         
         if (isEnabled && time.isAfter(DateTime.now())) {
+          // استخدام ID فريد جداً يعتمد على اليوم واسم الصلاة
+          final notificationId = "${date.year}${date.month}${date.day}${name.hashCode}".hashCode;
+          
           notificationService.scheduleNotification(
-            id: "$name-$i".hashCode, // ID فريد لكل يوم
+            id: notificationId,
             title: 'حان الآن موعد أذان $name',
             body: 'حي على الصلاة، حي على الفلاح',
             scheduledDate: time,
-            sound: 'azan', // استخدام ملف azan.mp3 الموجود في الـ raw
+            sound: 'azan',
           );
         }
       });
