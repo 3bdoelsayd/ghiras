@@ -1,4 +1,4 @@
-package com.example.ghiras
+package com.ghiras.app
 
 import com.ryanheise.audioservice.AudioServiceActivity
 

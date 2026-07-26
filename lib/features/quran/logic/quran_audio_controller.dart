@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
-import 'package:audio_session/audio_session.dart';
 import 'package:quran/quran.dart' as quran;
 import 'mushaf_controller.dart';
 import 'package:flutter/material.dart';

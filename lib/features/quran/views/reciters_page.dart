@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/helpers/hive_helper.dart';
 import '../../../core/models/reciter.dart';
 import '../../../core/models/moshaf.dart';
@@ -55,7 +54,13 @@ class _RecitersPageState extends State<RecitersPage> {
   void initState() {
     super.initState();
     reciters = [];
-    dio = Dio();
+    dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 20),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      },
+    ));
     getFavoriteList();
     fetchReciters();
   }
@@ -74,12 +79,27 @@ class _RecitersPageState extends State<RecitersPage> {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     try {
       const lang = "ar";
-      final r1 = await dio.get('https://mp3quran.net/api/v3/reciters?language=$lang');
-      final r2 = await dio.get('https://mp3quran.net/api/v3/moshaf?language=$lang');
-      final r3 = await dio.get('https://mp3quran.net/api/v3/suwar?language=$lang');
-      if (r1.data?['reciters'] != null) prefs.setString("reciters-$lang", json.encode(r1.data['reciters']));
-      if (r2.data?['riwayat'] != null) prefs.setString("moshaf-$lang",   json.encode(r2.data));
-      if (r3.data?['suwar']   != null) prefs.setString("suwar-$lang",    json.encode(r3.data['suwar']));
+      
+      // جلب البيانات بالتوازي لتسريع العملية (Parallel Fetching)
+      final results = await Future.wait([
+        dio.get('https://www.mp3quran.net/api/v3/reciters?language=$lang'),
+        dio.get('https://www.mp3quran.net/api/v3/riwayat?language=$lang'),
+        dio.get('https://www.mp3quran.net/api/v3/suwar?language=$lang'),
+      ]);
+
+      final r1 = results[0];
+      final r2 = results[1];
+      final r3 = results[2];
+      
+      if (r1.data != null && r1.data['reciters'] != null) {
+        await prefs.setString("reciters-$lang", json.encode(r1.data['reciters']));
+      }
+      if (r2.data != null && r2.data['riwayat'] != null) {
+        await prefs.setString("moshaf-$lang",   json.encode(r2.data));
+      }
+      if (r3.data != null && r3.data['suwar'] != null) {
+        await prefs.setString("suwar-$lang",    json.encode(r3.data['suwar']));
+      }
     } catch (e) {
       debugPrint('Error storing data: $e');
     }
@@ -104,11 +124,11 @@ class _RecitersPageState extends State<RecitersPage> {
         d3 = prefs.getString("suwar-$lang");
       }
 
-      if (d1 != null && d2 != null && d3 != null) {
+      if (d1 != null) {
         final List<dynamic> data1 = json.decode(d1);
-        final dynamic data2Raw = json.decode(d2);
-        final List<dynamic> data2 = data2Raw is Map ? data2Raw["riwayat"] : data2Raw;
-        final List<dynamic> data3 = json.decode(d3);
+        final dynamic data2Raw = d2 != null ? json.decode(d2) : null;
+        final List<dynamic> data2 = data2Raw is Map ? (data2Raw["riwayat"] ?? []) : (data2Raw ?? []);
+        final List<dynamic> data3 = d3 != null ? json.decode(d3) : [];
         
         final List<Reciter> loadedReciters = data1.map((r) => Reciter.fromJson(r)).toList();
         loadedReciters.sort((a, b) => a.name.toString().compareTo(b.name.toString()));
@@ -323,7 +343,7 @@ class _RecitersPageState extends State<RecitersPage> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Colors.black.withOpacity(0.3), _kDarkGreen],
+              colors: [Colors.black.withValues(alpha: 0.3), _kDarkGreen],
             ),
           ),
         ),
@@ -364,9 +384,9 @@ class _RecitersPageState extends State<RecitersPage> {
                 child: Container(
                   height: 40.h,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.13),
+                    color: Colors.white.withValues(alpha: 0.13),
                     borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: Colors.white.withOpacity(0.18)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
                   ),
                   child: TextField(
                     controller: textEditingController,
@@ -423,7 +443,7 @@ class _RecitersPageState extends State<RecitersPage> {
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
         decoration: BoxDecoration(
-          color: active ? _kLightGreen : Colors.white.withOpacity(0.12),
+          color: active ? _kLightGreen : Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(8.r),
         ),
         child: Text(label,
@@ -431,7 +451,7 @@ class _RecitersPageState extends State<RecitersPage> {
               fontFamily: 'Cairo',
               fontSize: 10.sp,
               fontWeight: FontWeight.w700,
-              color: active ? _kDarkGreen : Colors.white.withOpacity(0.75),
+              color: active ? _kDarkGreen : Colors.white.withValues(alpha: 0.75),
             )),
       ),
     );
@@ -451,7 +471,7 @@ class _RecitersPageState extends State<RecitersPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.cloud_off_rounded, size: 64.sp, color: _kTextMuted.withOpacity(0.5)),
+              Icon(Icons.cloud_off_rounded, size: 64.sp, color: _kTextMuted.withValues(alpha: 0.5)),
               SizedBox(height: 16.h),
               Text(
                 "لم نتمكن من تحميل قائمة القراء",

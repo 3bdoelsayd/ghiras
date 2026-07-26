@@ -4,20 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart' as geo;
 import 'package:adhan/adhan.dart';
 import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import '../../core/helpers/hive_helper.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:quran/quran.dart' as quran;
 import 'package:share_plus/share_plus.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
-import '../../shared/widgets/glass_container.dart';
 import '../../core/utils/app_router.dart';
 import '../khatmah/logic/khatmah_controller.dart';
 import '../main_layout.dart';
-import '../quran/logic/mushaf_controller.dart';
-import '../../core/constants/app_data.dart';
+// import '../../core/constants/app_data.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Timer? _timer;
   String _timeUntilNext = '';
   String _locationName = 'جاري تحديد الموقع...';
-  late Box _settingsBox;
+  // final Box _settingsBox = Hive.box('settings');
   bool _showAllFeatures = false;
 
   late AnimationController _headerAnimController;
@@ -40,12 +39,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   late int _randomSurah;
   late int _randomVerse;
-  String _randomHadith = '';
+  final String _randomHadith = '';
 
   @override
   void initState() {
     super.initState();
-    _settingsBox = Hive.box('settings');
+    // _settingsBox.clear();
     if (!Get.isRegistered<KhatmahController>()) {
       Get.put(KhatmahController());
     }
@@ -76,11 +75,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _initDefaultPrayers() {
-    final cairoCoords = Coordinates(30.0444, 31.2357);
+    // 1. محاولة جلب آخر موقع محفوظ من الذاكرة لضمان عمل الأذان بدون إنترنت أو GPS
+    final double? savedLat = getValue("last_lat");
+    final double? savedLng = getValue("last_lng");
+    final String? savedName = getValue("last_location_name");
+
     final params = CalculationMethod.muslim_world_league.getParameters();
     params.madhab = Madhab.shafi;
-    _prayerTimes = PrayerTimes.today(cairoCoords, params);
-    _locationName = 'القاهرة (افتراضي)';
+
+    if (savedLat != null && savedLng != null) {
+      _prayerTimes = PrayerTimes.today(Coordinates(savedLat, savedLng), params);
+      _locationName = savedName ?? 'موقع محفوظ';
+    } else {
+      // 2. إذا لم يوجد موقع محفوظ، استخدم القاهرة كافتراضي
+      final cairoCoords = Coordinates(30.0444, 31.2357);
+      _prayerTimes = PrayerTimes.today(cairoCoords, params);
+      _locationName = 'القاهرة (افتراضي)';
+    }
     _updateCountdown();
   }
 
@@ -88,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() {
       _randomSurah = Random().nextInt(114) + 1;
       _randomVerse = Random().nextInt(quran.getVerseCount(_randomSurah)) + 1;
-      _randomHadith = AppData.zikrNotfications[Random().nextInt(AppData.zikrNotfications.length)];
+       // _randomHadith = AppData.zikrNotfications[Random().nextInt(AppData.zikrNotfications.length)];
     });
   }
 
@@ -116,45 +127,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         permission = await Geolocator.requestPermission();
       }
 
-      final cairoCoords = Coordinates(30.0444, 31.2357);
       final params = CalculationMethod.muslim_world_league.getParameters();
       params.madhab = Madhab.shafi;
 
       if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
         bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        
+        // إذا كان الموقع مفتوحاً، نقوم بتحديث الإحداثيات (لو المستخدم غير مكانه)
         if (serviceEnabled) {
           Position position = await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.low,
-            timeLimit: const Duration(seconds: 3),
+            timeLimit: const Duration(seconds: 5),
           );
+          
+          String currentCity = 'موقعك الحالي';
+          try {
+            List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(position.latitude, position.longitude);
+            if (placemarks.isNotEmpty) {
+              currentCity = placemarks[0].locality ?? placemarks[0].country ?? 'موقعك الحالي';
+            }
+          } catch (_) {}
+
           if (mounted) {
             setState(() {
               _prayerTimes = PrayerTimes.today(Coordinates(position.latitude, position.longitude), params);
-              _locationName = 'موقعك الحالي';
+              _locationName = currentCity;
               _updateCountdown();
             });
+            
+            // حفظ الموقع الجديد في الذاكرة للطلبات القادمة
+            updateValue("last_lat", position.latitude);
+            updateValue("last_lng", position.longitude);
+            updateValue("last_location_name", currentCity);
             return;
           }
         }
       }
-
-      if (mounted) {
-        setState(() {
-          _prayerTimes = PrayerTimes.today(cairoCoords, params);
-          _locationName = 'القاهرة (افتراضي)';
-          _updateCountdown();
-        });
-      }
+      
+      // في حالة فشل الحصول على الموقع الجديد (GPS مغلق)، سيعتمد التطبيق على الموقع المحفوظ سابقاً
     } catch (e) {
-      final cairoCoords = Coordinates(30.0444, 31.2357);
-      final params = CalculationMethod.muslim_world_league.getParameters();
-      if (mounted) {
-        setState(() {
-          _prayerTimes = PrayerTimes.today(cairoCoords, params);
-          _locationName = 'القاهرة (افتراضي)';
-          _updateCountdown();
-        });
-      }
+      debugPrint("Location update error: $e");
     }
   }
 
@@ -761,7 +773,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             } catch (_) {}
             
             final String khatmahName = activeKhatmah.title;
-            final double progress = activeKhatmah.progress;
+            // final double progress = activeKhatmah.progress;
 
             String firstVerseOfPage = "";
             String surahName = "";
@@ -1038,6 +1050,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         'isRoute': false,
         'index': 3,
       },
+      {
+        'title': 'الزكاة',
+        'icon': Icons.calculate_rounded,
+        'gradient': [const Color(0xFF0F172A), const Color(0xFF334155)],
+        'lightColor': const Color(0xFFF1F5F9),
+        'route': AppRouter.zakat,
+        'isRoute': true,
+      },
     ];
 
     final displayFeatures = _showAllFeatures ? features : features.take(4).toList();
@@ -1241,7 +1261,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Row(
                         children: [
                           GestureDetector(
-                            onTap: () => Share.share('$content\n\n[$subtitle]\nتطبيق ${AppStrings.appName}'),
+                            onTap: () => Share.share('$content\n\n[$subtitle]\nتطبيق ${AppStrings.appName}\n${AppStrings.appStoreLink}'),
                             child: Icon(Icons.share_rounded, size: 16, color: color.withValues(alpha: 0.5)),
                           ),
                           const SizedBox(width: 14),

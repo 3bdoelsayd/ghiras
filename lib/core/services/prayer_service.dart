@@ -4,7 +4,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart'; // ✅ أضفنا geocoding
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:timezone/timezone.dart' as tz;
 import 'notification_service.dart';
 
 class PrayerService extends GetxController {
@@ -225,7 +224,7 @@ class PrayerService extends GetxController {
       'تنبيه',
       'تم ${!currentStatus ? 'تفعيل' : 'إيقاف'} صوت أذان $prayerName',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: !currentStatus ? Colors.green.withOpacity(0.7) : Colors.red.withOpacity(0.7),
+      backgroundColor: !currentStatus ? Colors.green.withValues(alpha: 0.7) : Colors.red.withValues(alpha: 0.7),
       colorText: Colors.white,
     );
 

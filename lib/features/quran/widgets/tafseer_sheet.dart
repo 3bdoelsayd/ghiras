@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:quran/quran.dart' as quran;
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../logic/mushaf_controller.dart';
 import '../../../core/constants/app_colors.dart';
 
@@ -95,7 +94,7 @@ class _TafseerSheetState extends State<TafseerSheet> {
                 Container(
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.05),
+                    color: AppColors.primary.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Text(

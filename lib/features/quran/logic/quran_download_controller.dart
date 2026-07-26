@@ -37,7 +37,7 @@ class QuranDownloadController extends GetxController {
     final skoonDir = Directory("${appDir.path}/skoon");
     if (!await skoonDir.exists()) await skoonDir.create(recursive: true);
     
-    return "${skoonDir.path}/reciter_${reciterId}_mushaf_${mushafId}_surah_${surahNum}.mp3";
+    return "${skoonDir.path}/reciter_${reciterId}_mushaf_${mushafId}_surah_$surahNum.mp3";
   }
 
   Future<void> downloadSurah({
@@ -55,21 +55,27 @@ class QuranDownloadController extends GetxController {
 
     final path = await _getDownloadPath(surahNum, reciter.id, moshaf.id);
     
-    // التحقق إذا كان الملف مكتملاً بالفعل
-    if (File(path).existsSync() && (downloadStatus[key] == 'completed' || downloadStatus[key] == null)) {
-      // نتأكد من حالة الملف فعلياً (ربما تم تحميله في جلسة سابقة)
-      // إذا لم يكن في قائمة التحميل النشطة فهو مكتمل
-      if (!downloadStatus.containsKey(key)) {
-        Get.snackbar("موجود بالفعل", "سورة ${quran.getSurahNameArabic(surahNum)} محملة مسبقاً");
-        return;
+    // التحقق من صحة الملف الموجود
+    if (File(path).existsSync()) {
+      final fileSize = await File(path).length();
+      // إذا كان الملف أصغر من 50 كيلوبايت فهو بالتأكيد تالف أو غير مكتمل
+      if (fileSize < 50 * 1024) {
+        await File(path).delete();
+      } else if (downloadStatus[key] == 'completed' || downloadStatus[key] == null) {
+        if (!downloadStatus.containsKey(key)) {
+          Get.snackbar("موجود بالفعل", "سورة ${quran.getSurahNameArabic(surahNum)} محملة مسبقاً");
+          return;
+        }
       }
     }
 
     if (Platform.isAndroid) {
+      // نطلب فقط الصلاحيات المسموحة في المانيفست
       await [Permission.audio, Permission.storage].request();
     }
 
-    final url = "${moshaf.server}/${surahNum.toString().padLeft(3, '0')}.mp3".replaceAll('http://', 'https://');
+    // إزالة إجبار https لأن الكثير من سيرفرات القراء لا تدعمها وتكتفي بـ http
+    final url = "${moshaf.server}/${surahNum.toString().padLeft(3, '0')}.mp3";
     final notificationId = key.hashCode.abs();
     
     final cancelToken = CancelToken();
@@ -77,54 +83,72 @@ class QuranDownloadController extends GetxController {
     downloadStatus[key] = 'downloading';
 
     try {
-      // دعم الاستئناف: نتحقق من حجم الملف الموجود حالياً
+      // دعم الاستئناف الحقيقي: نتحقق من حجم الملف الموجود حالياً
       int downloadedLength = 0;
       File partialFile = File(path);
       if (await partialFile.exists()) {
         downloadedLength = await partialFile.length();
       }
 
+      // إذا كان الملف موجوداً بالكامل (بناءً على الحجم المتوقع من السيرفر)، نعتبره مكتملاً
+      // لكننا هنا سنفتح اتصالاً لطلب الجزء المتبقي فقط
       Options options = Options(
         headers: downloadedLength > 0 ? {'range': 'bytes=$downloadedLength-'} : {},
+        responseType: ResponseType.stream, // استخدام Stream لضمان عدم استهلاك الرامات
       );
 
-      await _dio.download(
-        url,
-        path,
-        cancelToken: cancelToken,
-        options: options,
-        deleteOnError: false, // لا تحذف الملف عند الخطأ للسماح بالاستئناف
-        onReceiveProgress: (received, total) {
-          if (total != -1) {
-            // إجمالي الملف = ما تم استقباله الآن + ما كان موجوداً مسبقاً
-            // التوتال المرجع من السيرفر هو المتبقي فقط عند استخدام Range
-            int totalBytes = total + downloadedLength;
-            int currentReceived = received + downloadedLength;
-            
+      final response = await _dio.get(url, options: options);
+      
+      // فتح الملف في وضع "الإضافة" (Append)
+      final file = File(path);
+      IOSink raf = file.openWrite(mode: downloadedLength > 0 ? FileMode.append : FileMode.write);
+      
+      int totalBytes = response.headers.value(HttpHeaders.contentLengthHeader) != null 
+          ? int.parse(response.headers.value(HttpHeaders.contentLengthHeader)!) + downloadedLength 
+          : -1;
+
+      int currentReceived = downloadedLength;
+
+      await response.data.stream.listen(
+        (List<int> chunk) {
+          raf.add(chunk);
+          currentReceived += chunk.length;
+          
+          if (totalBytes != -1) {
             int progress = ((currentReceived / totalBytes) * 100).toInt();
             downloadProgress[key] = progress;
             
-            _notificationService.showDownloadNotification(
-              id: notificationId,
-              title: "جاري تحميل سورة ${quran.getSurahNameArabic(surahNum)}",
-              body: "القارئ ${reciter.name} ($progress%)",
-              progress: progress,
-            );
+            // تحديث الإشعار كل 5% لتجنب الضغط على النظام
+            if (progress % 5 == 0) {
+              _notificationService.showDownloadNotification(
+                id: notificationId,
+                title: "جاري تحميل سورة ${quran.getSurahNameArabic(surahNum)}",
+                body: "تم تحميل $progress%",
+                progress: progress,
+              );
+            }
           }
         },
-      );
-      
-      downloadStatus[key] = 'completed';
-      downloadProgress.remove(key);
-      _cancelTokens.remove(key);
-      
-      _notificationService.showDownloadNotification(
-        id: notificationId,
-        title: "اكتمل التحميل",
-        body: "تم تحميل سورة ${quran.getSurahNameArabic(surahNum)} بنجاح",
-        progress: 100,
-        isCompleted: true,
-      );
+        onDone: () async {
+          await raf.close();
+          downloadStatus[key] = 'completed';
+          downloadProgress.remove(key);
+          _cancelTokens.remove(key);
+          
+          _notificationService.showDownloadNotification(
+            id: notificationId,
+            title: "اكتمل التحميل",
+            body: "تم تحميل سورة ${quran.getSurahNameArabic(surahNum)} بنجاح",
+            progress: 100,
+            isCompleted: true,
+          );
+        },
+        onError: (e) async {
+          await raf.close();
+          throw e;
+        },
+        cancelOnError: true,
+      ).asFuture();
       
     } catch (e) {
       _cancelTokens.remove(key);
@@ -149,11 +173,25 @@ class QuranDownloadController extends GetxController {
     }
   }
 
-  void cancelDownload(String key) async {
+  void cancelDownload(String key, String path) async {
     pauseDownload(key);
     downloadStatus.remove(key);
     downloadProgress.remove(key);
-    // يمكن إضافة كود هنا لحذف الملف فعلياً إذا أراد المستخدم "إلغاء" وليس "إيقاف مؤقت"
+    final file = File(path);
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
+
+  Future<void> deleteDownloadedSurah(int surahNum, dynamic reciterId, int mushafId) async {
+    final path = await _getDownloadPath(surahNum, reciterId, mushafId);
+    final key = _getFileKey(surahNum, reciterId, mushafId);
+    final file = File(path);
+    if (await file.exists()) {
+      await file.delete();
+      downloadStatus.remove(key);
+      Get.snackbar("تم الحذف", "تم حذف سورة ${quran.getSurahNameArabic(surahNum)} لإعادة تحميلها");
+    }
   }
 
   void cancelAllDownloads() {
@@ -187,7 +225,8 @@ class QuranDownloadController extends GetxController {
 
         final path = await _getDownloadPath(surahNum, reciter.id, moshaf.id);
         if (!File(path).existsSync()) {
-          final url = "${moshaf.server}/${surahNum.toString().padLeft(3, '0')}.mp3".replaceAll('http://', 'https://');
+          // إزالة إجبار https لضمان عمل السيرفرات القديمة
+          final url = "${moshaf.server}/${surahNum.toString().padLeft(3, '0')}.mp3";
           
           try {
             await _dio.download(url, path, cancelToken: _allDownloadCancelToken);

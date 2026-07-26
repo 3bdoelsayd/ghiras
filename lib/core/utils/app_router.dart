@@ -15,7 +15,6 @@ import '../../features/qibla/qibla_screen.dart';
 import '../../features/prayer/location_picker_screen.dart';
 import '../../features/calendar/calendar_screen.dart';
 import '../../features/quran/views/reciters_page.dart';
-
 class AppRouter {
   static const String splash = '/splash';
   static const String home = '/';
@@ -32,6 +31,7 @@ class AppRouter {
   static const String prayerSettings = '/prayer-settings';
   static const String qibla = '/qibla';
   static const String calendar = '/calendar';
+  static const String zakat = '/zakat';
 
   static final router = GoRouter(
     initialLocation: splash,

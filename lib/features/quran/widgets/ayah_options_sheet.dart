@@ -162,7 +162,7 @@ class _AyahOptionsSheetState extends State<AyahOptionsSheet> {
                 mushaf.removeAyahBookmark(widget.surahNumber, widget.ayahNumber);
                 Get.snackbar('تمت الإزالة', 'تم إزالة العلامة بنجاح',
                     snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.redAccent.withOpacity(0.8),
+                    backgroundColor: Colors.redAccent.withValues(alpha: 0.8),
                     colorText: Colors.white);
               } else {
                 BookmarksDialog.show(context, widget.surahNumber, widget.ayahNumber);
@@ -225,7 +225,7 @@ class _AyahOptionsSheetState extends State<AyahOptionsSheet> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(15),
           ),
           child: Row(

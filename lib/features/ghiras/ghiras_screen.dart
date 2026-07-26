@@ -3,8 +3,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../shared/widgets/glass_container.dart';
-import '../athkar/data/athkar_model.dart';
-import '../../shared/widgets/circle_shapes.dart';
 import '../../shared/widgets/circle_shapes.dart';
 
 class GhirasScreen extends StatefulWidget {

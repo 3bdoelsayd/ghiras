@@ -4,14 +4,11 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:quran/quran.dart' as quran;
 
-import '../../../core/constants/app_colors.dart';
 import '../../../core/helpers/hive_helper.dart';
 import '../../../core/models/reciter.dart';
 import '../../../core/models/moshaf.dart';
@@ -207,7 +204,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [Colors.black.withOpacity(0.3), _kDarkGreen],
+                          colors: [Colors.black.withValues(alpha: 0.3), _kDarkGreen],
                         ),
                       ),
                     ),
@@ -281,9 +278,9 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
             Container(
               height: 38.h,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(11.r),
-                border: Border.all(color: Colors.white.withOpacity(0.15)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
               ),
               child: TextField(
                 controller: _searchCtrl,
@@ -321,9 +318,9 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 8.h),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: Colors.white.withOpacity(0.13)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
         ),
         child: Column(
           children: [
@@ -358,7 +355,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
         duration: const Duration(milliseconds: 180),
         padding: EdgeInsets.symmetric(horizontal: 13.w, vertical: 5.h),
         decoration: BoxDecoration(
-          color: active ? _kLightGreen : Colors.white.withOpacity(0.1),
+          color: active ? _kLightGreen : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8.r),
         ),
         child: Text(label,
@@ -378,9 +375,9 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
       child: Container(
         width: 34.w, height: 34.h,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(9.r),
-          border: Border.all(color: Colors.white.withOpacity(0.15)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
         ),
         child: Icon(icon, color: Colors.white, size: 16.sp),
       ),
@@ -523,147 +520,159 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
     final isDl     = _isDownloaded(n);
     
     final downloadController = Get.find<QuranDownloadController>();
-    final fileKey = "${widget.reciter.name}-${widget.mushaf.id}-$n";
+    final fileKey = "${widget.reciter.id}-${widget.mushaf.id}-$n";
 
     return Container(
-      height: 52.h,
-      margin: EdgeInsets.only(bottom: 6.h),
+      margin: EdgeInsets.only(bottom: 8.h),
       decoration: BoxDecoration(
         color: _kCard,
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(14.r),
         border: Border.all(color: _kBorder),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))
+        ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          // Number badge
-          Container(
-            width: 44.w,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              border: Border(left: BorderSide(color: _kInnerBorder)),
-            ),
-            alignment: Alignment.center,
-            child: Container(
-              width: 28.w, height: 28.h,
-              decoration: BoxDecoration(
-                color: isMakkah ? _kMakkahBg : _kMadinahBg,
-                borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(
-                  color: isMakkah ? _kMakkahBdr : _kMadinahBdr,
-                  width: 1.5,
+          Row(
+            children: [
+              // Number badge
+              Container(
+                width: 44.w,
+                height: 52.h,
+                decoration: BoxDecoration(
+                  border: Border(left: BorderSide(color: _kInnerBorder)),
                 ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                _toArabic(n),
-                style: TextStyle(
-                  fontSize: n > 99 ? 8.sp : 10.sp,
-                  fontWeight: FontWeight.w700,
-                  color: isMakkah ? _kMakkahText : _kDarkGreen,
-                  fontFamily: 'Cairo',
-                ),
-              ),
-            ),
-          ),
-
-          // Name + ayat count
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10.w),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(surah["suraName"],
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w700,
-                        color: _kTextMain,
-                        fontFamily: 'AmiriQuran',
-                      )),
-                  SizedBox(width: 4.w),
-                  Text(
-                    "${_toArabic(quran.getVerseCount(n))} آية",
+                alignment: Alignment.center,
+                child: Container(
+                  width: 28.w, height: 28.h,
+                  decoration: BoxDecoration(
+                    color: isMakkah ? _kMakkahBg : _kMadinahBg,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(
+                      color: isMakkah ? _kMakkahBdr : _kMadinahBdr,
+                      width: 1.5,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    _toArabic(n),
                     style: TextStyle(
-                      fontSize: 10.sp,
-                      color: _kTextMuted,
+                      fontSize: n > 99 ? 8.sp : 10.sp,
+                      fontWeight: FontWeight.w700,
+                      color: isMakkah ? _kMakkahText : _kDarkGreen,
                       fontFamily: 'Cairo',
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
 
-          // Action buttons
-          Padding(
-            padding: EdgeInsets.only(left: 10.w),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _actionBtn(
-                  bg: _kPlayBg,
-                  icon: Icons.play_arrow_rounded,
-                  color: _kPlayIcon,
-                  onTap: () => _handlePlay(surah, n),
-                ),
-                SizedBox(width: 4.w),
-                Obx(() {
-                  final status = downloadController.downloadStatus[fileKey];
-                  final progress = downloadController.downloadProgress[fileKey];
-
-                  if (status == 'downloading' || status == 'paused') {
-                    return GestureDetector(
-                      onTap: () => downloadController.downloadSurah(
-                        reciter: widget.reciter,
-                        moshaf: widget.mushaf,
-                        surahNum: n,
-                      ),
-                      child: Container(
-                        width: 28.w, height: 28.h,
-                        padding: EdgeInsets.all(6.r),
-                        decoration: BoxDecoration(
-                          color: status == 'paused' ? Colors.orange[50] : Colors.blue[50],
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            CircularProgressIndicator(
-                              value: (progress ?? 0) / 100,
-                              strokeWidth: 2,
-                              color: status == 'paused' ? Colors.orange : Colors.blue,
-                            ),
-                            Icon(
-                              status == 'paused' ? Icons.play_arrow_rounded : Icons.pause_rounded,
-                              size: 10.sp,
-                              color: status == 'paused' ? Colors.orange : Colors.blue,
-                            ),
-                          ],
+              // Name + ayat count
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(surah["suraName"],
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w700,
+                            color: _kTextMain,
+                            fontFamily: 'AmiriQuran',
+                          )),
+                      SizedBox(width: 4.w),
+                      Text(
+                        "${_toArabic(quran.getVerseCount(n))} آية",
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: _kTextMuted,
+                          fontFamily: 'Cairo',
                         ),
                       ),
-                    );
-                  }
-                  
-                  // إذا اكتمل التحميل الآن أو كان موجوداً مسبقاً
-                  final isCurrentlyDl = isDl || status == 'completed';
-                  
-                  return _actionBtn(
-                    bg: isCurrentlyDl ? _kDlDoneBg : _kDlBg,
-                    icon: isCurrentlyDl ? Icons.check_rounded : Icons.download_rounded,
-                    color: isCurrentlyDl ? _kDlDoneIcon : _kDlIcon,
-                    onTap: () => _handleDownload(n),
-                  );
-                }),
-                SizedBox(width: 4.w),
-                _actionBtn(
-                  bg: _kFavBg,
-                  icon: isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                  color: isFav ? _kFavOn : _kFavOff,
-                  onTap: () => _toggleFavorite(n),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+
+              // Action buttons
+              Padding(
+                padding: EdgeInsets.only(left: 10.w),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _actionBtn(
+                      bg: _kPlayBg,
+                      icon: Icons.play_arrow_rounded,
+                      color: _kPlayIcon,
+                      onTap: () => _handlePlay(surah, n),
+                    ),
+                    SizedBox(width: 4.w),
+                    Obx(() {
+                      final status = downloadController.downloadStatus[fileKey];
+                      final isCurrentlyDl = isDl || status == 'completed';
+                      
+                      return GestureDetector(
+                        onLongPress: isCurrentlyDl ? () => _showDeleteDialog(n) : null,
+                        child: _actionBtn(
+                          bg: isCurrentlyDl ? _kDlDoneBg : _kDlBg,
+                          icon: isCurrentlyDl ? Icons.check_rounded : Icons.download_rounded,
+                          color: isCurrentlyDl ? _kDlDoneIcon : _kDlIcon,
+                          onTap: () => _handleDownload(n),
+                        ),
+                      );
+                    }),
+                    SizedBox(width: 4.w),
+                    _actionBtn(
+                      bg: _kFavBg,
+                      icon: isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      color: isFav ? _kFavOn : _kFavOff,
+                      onTap: () => _toggleFavorite(n),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
+          // Progress Bar
+          Obx(() {
+            final status = downloadController.downloadStatus[fileKey];
+            final progress = downloadController.downloadProgress[fileKey] ?? 0;
+            
+            if (status == 'downloading' || status == 'paused') {
+              return Padding(
+                padding: EdgeInsets.fromLTRB(12.w, 0, 12.w, 8.h),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          status == 'paused' ? "تم الإيقاف مؤقتاً" : "جاري التحميل...",
+                          style: TextStyle(fontSize: 9.sp, fontFamily: 'Cairo', color: status == 'paused' ? Colors.orange : _kDlIcon),
+                        ),
+                        Text(
+                          "%${_toArabic(progress)}",
+                          style: TextStyle(fontSize: 9.sp, fontWeight: FontWeight.bold, fontFamily: 'Cairo', color: _kDlIcon),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4.h),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10.r),
+                      child: LinearProgressIndicator(
+                        value: progress / 100,
+                        minHeight: 4.h,
+                        backgroundColor: _kDlBg,
+                        valueColor: AlwaysStoppedAnimation<Color>(status == 'paused' ? Colors.orange : _kDlIcon),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
         ],
       ),
     );
@@ -728,6 +737,32 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) setState(() {});
     });
+  }
+
+  void _showDeleteDialog(int n) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        title: const Text("حذف السورة", textAlign: TextAlign.right, style: TextStyle(fontFamily: 'Cairo')),
+        content: Text(
+          "هل تريد حذف سورة ${quran.getSurahNameArabic(n)} لإعادة تحميلها مرة أخرى؟",
+          textAlign: TextAlign.right,
+          style: TextStyle(fontFamily: 'Cairo'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("إلغاء", style: TextStyle(fontFamily: 'Cairo'))),
+          TextButton(
+            onPressed: () {
+              Get.find<QuranDownloadController>().deleteDownloadedSurah(n, widget.reciter.id, widget.mushaf.id);
+              Navigator.pop(ctx);
+              setState(() {});
+            },
+            child: const Text("حذف", style: TextStyle(fontFamily: 'Cairo', color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _toggleFavorite(int n) {

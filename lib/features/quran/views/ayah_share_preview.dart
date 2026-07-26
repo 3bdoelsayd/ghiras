@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import '../logic/mushaf_controller.dart';
 import '../data/quran_text.dart';
 
@@ -92,7 +93,7 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
     final imagePath = await File('${directory.path}/ayah_share.png').create();
     await imagePath.writeAsBytes(image);
 
-    await Share.shareXFiles([XFile(imagePath.path)], text: 'تمت المشاركة من تطبيق غراس');
+    await Share.shareXFiles([XFile(imagePath.path)], text: 'تمت المشاركة من تطبيق ${AppStrings.appName}\n${AppStrings.appStoreLink}');
   }
 
   String _toArabicNumbers(String input) {
@@ -229,7 +230,7 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
 
                       const SizedBox(height: 20),
                       Text(
-                        'تطبيق غراس - صدقة جارية',
+                        'تطبيق ${AppStrings.appName} - صدقة جارية',
                         style: TextStyle(
                           fontFamily: 'Cairo',
                           fontSize: 10.sp,
@@ -248,7 +249,7 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
               color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
               borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
             ),
             child: Column(
@@ -320,7 +321,7 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
                       label: const Text('خط مصحف', style: TextStyle(fontFamily: 'Cairo')),
                       selected: _isQCF,
                       onSelected: (val) => setState(() => _isQCF = val),
-                      selectedColor: AppColors.primary.withOpacity(0.2),
+                      selectedColor: AppColors.primary.withValues(alpha: 0.2),
                     ),
                   ],
                 ),

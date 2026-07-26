@@ -1,22 +1,26 @@
 part of 'player_bloc_bloc.dart';
 
 @immutable
-class PlayerBlocState {}
+class PlayerBlocState {
+  const PlayerBlocState();
+}
 
-class PlayerBlocInitial extends PlayerBlocState {}
+class PlayerBlocInitial extends PlayerBlocState {
+  const PlayerBlocInitial();
+}
 
 class PlayerBlocPlaying extends PlayerBlocState {
-  Moshaf moshaf;
-  Reciter reciter;
-  int suraNumber;
-  // String suraName;
-  var jsonData;
-  AudioPlayer audioPlayer;
-  List surahNumbers;
-  var playList;
+  final Moshaf moshaf;
+  final Reciter reciter;
+  final int suraNumber;
+  // final String suraName;
+  final dynamic jsonData;
+  final AudioPlayer audioPlayer;
+  final List surahNumbers;
+  final dynamic playList;
 
-  // bool isHidden;
-  PlayerBlocPlaying({
+  // final bool isHidden;
+  const PlayerBlocPlaying({
     required this.moshaf,
     required this.reciter,
     required this.suraNumber,
@@ -29,11 +33,15 @@ class PlayerBlocPlaying extends PlayerBlocState {
   });
 }
 
-class PlayerBlocPaused extends PlayerBlocState {}
+class PlayerBlocPaused extends PlayerBlocState {
+  const PlayerBlocPaused();
+}
 
-class PlayerBlocClosed extends PlayerBlocState {}
+class PlayerBlocClosed extends PlayerBlocState {
+  const PlayerBlocClosed();
+}
 
 class PlayerBlocError extends PlayerBlocState {
   final String message;
-  PlayerBlocError(this.message);
+  const PlayerBlocError(this.message);
 }

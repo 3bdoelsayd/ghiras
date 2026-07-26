@@ -7,7 +7,6 @@ import 'package:hijri/hijri_calendar.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/prayer_service.dart';
-import '../../core/utils/app_router.dart';
 
 class PrayerScreen extends StatefulWidget {
   const PrayerScreen({super.key});
@@ -162,7 +161,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
+        color: AppColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -204,7 +203,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -221,7 +220,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -247,11 +246,11 @@ class _PrayerScreenState extends State<PrayerScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        color: isCurrent ? AppColors.primary.withOpacity(0.1) : Colors.white,
+        color: isCurrent ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: isCurrent ? Border.all(color: AppColors.primary.withOpacity(0.5), width: 1.5) : null,
+        border: isCurrent ? Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5) : null,
         boxShadow: [
-          if (!isCurrent) BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
+          if (!isCurrent) BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))
         ],
       ),
       child: Row(

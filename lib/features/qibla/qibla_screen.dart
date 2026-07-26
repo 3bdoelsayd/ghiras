@@ -39,16 +39,12 @@ class _QiblaScreenState extends State<QiblaScreen> {
         timeLimit: const Duration(seconds: 5),
       ).catchError((_) => null);
 
-      if (position != null) {
-        final qibla = Qibla(Coordinates(position.latitude, position.longitude));
-        if (mounted) {
-          setState(() {
-            _qiblaDirection = qibla.direction;
-            _isLoading = false;
-          });
-        }
-      } else {
-        if (mounted) setState(() => _isLoading = false);
+      final qibla = Qibla(Coordinates(position.latitude, position.longitude));
+      if (mounted) {
+        setState(() {
+          _qiblaDirection = qibla.direction;
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -140,7 +136,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                                     child: Container(
                                       margin: const EdgeInsets.only(top: 15),
                                       width: 2, height: 8,
-                                      color: Colors.grey.withOpacity(0.2),
+                                      color: Colors.grey.withValues(alpha: 0.2),
                                     ),
                                   ),
                                 )),

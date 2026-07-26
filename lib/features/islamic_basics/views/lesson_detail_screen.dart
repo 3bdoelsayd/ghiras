@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/lesson_controller.dart';
 import '../models/islamic_lesson_model.dart';
+import 'widgets/lesson_ui_components.dart';
 
 class LessonDetailScreen extends StatelessWidget {
   final IslamicLesson lesson;
@@ -11,6 +12,7 @@ class LessonDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<LessonController>();
     final PageController pageController = PageController();
+    final visual = LessonIcons.of(lesson.id);
 
     return Scaffold(
       appBar: AppBar(
@@ -22,12 +24,14 @@ class LessonDetailScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          Obx(() => LinearProgressIndicator(
-            value: (controller.currentStepIndex.value + 1) / lesson.steps.length,
-            minHeight: 8,
-            backgroundColor: Colors.grey[200],
-            color: Get.theme.primaryColor,
-          )),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Obx(() => StepProgressHeader(
+              currentStep: controller.currentStepIndex.value,
+              totalSteps: lesson.steps.length,
+              color: visual.color,
+            )),
+          ),
           Expanded(
             child: PageView.builder(
               controller: pageController,
@@ -36,17 +40,30 @@ class LessonDetailScreen extends StatelessWidget {
               onPageChanged: (index) => controller.currentStepIndex.value = index,
               itemBuilder: (context, index) {
                 final step = lesson.steps[index];
-                return _buildStepUI(context, step, controller);
+                if (step.type == StepType.summary) {
+                  return LessonCompletionView(
+                    score: controller.score.value,
+                    totalQuestions: lesson.steps.where((s) => s.type == StepType.quiz).length,
+                    onFinish: () {
+                      controller.markLessonComplete(lesson.id);
+                      Navigator.pop(context);
+                    },
+                  );
+                }
+                return _buildStepUI(context, step, controller, visual.color);
               },
             ),
           ),
-          _buildNavigationButtons(context, controller, pageController),
+          Obx(() {
+            final isSummary = lesson.steps[controller.currentStepIndex.value].type == StepType.summary;
+            return isSummary ? const SizedBox.shrink() : _buildNavigationButtons(context, controller, pageController, visual.color);
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildStepUI(BuildContext context, LessonStep step, LessonController controller) {
+  Widget _buildStepUI(BuildContext context, LessonStep step, LessonController controller, Color themeColor) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -71,19 +88,6 @@ class LessonDetailScreen extends StatelessWidget {
           const SizedBox(height: 30),
           if (step.type == StepType.quiz && step.questions != null)
             ...step.questions!.map((q) => _buildQuizUI(context, q, controller)),
-          if (step.type == StepType.summary)
-            Center(
-              child: Column(
-                children: [
-                  const Icon(Icons.stars, size: 80, color: Colors.orange),
-                  const SizedBox(height: 16),
-                  Text(
-                    'تم بنجاح! نتيجتك: ${controller.score.value}',
-                    style: const TextStyle(fontFamily: 'cairo', fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );
@@ -100,50 +104,25 @@ class LessonDetailScreen extends StatelessWidget {
         const SizedBox(height: 16),
         ...List.generate(question.options.length, (index) {
           return Obx(() {
-            Color? cardColor;
-            if (controller.quizAnswered.value) {
-              if (index == question.correctAnswerIndex) {
-                cardColor = Colors.green.withOpacity(0.2);
-              } else if (index == controller.selectedOptionIndex.value) {
-                cardColor = Colors.red.withOpacity(0.2);
-              }
-            }
-
-            return Card(
-              color: cardColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(
-                  color: controller.selectedOptionIndex.value == index ? Colors.blue : Colors.grey.shade300,
-                  width: 2,
-                ),
-              ),
-              child: ListTile(
-                title: Text(question.options[index], style: const TextStyle(fontFamily: 'cairo')),
-                onTap: () => controller.submitAnswer(question, index),
-              ),
+            return AnswerOptionCard(
+              text: question.options[index],
+              isSelected: controller.selectedOptionIndex.value == index,
+              isCorrectAnswer: controller.quizAnswered.value ? (index == question.correctAnswerIndex) : null,
+              showResult: controller.quizAnswered.value,
+              onTap: () => controller.submitAnswer(question, index),
             );
           });
         }),
-        const SizedBox(height: 16),
-        Obx(() => controller.quizAnswered.value
-            ? Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'تفسير: ${question.explanation}',
-                  style: const TextStyle(fontFamily: 'cairo', fontStyle: FontStyle.italic),
-                ),
-              )
-            : const SizedBox.shrink()),
+        Obx(() => ExplanationBox(
+          explanation: question.explanation,
+          isCorrect: controller.isCorrect.value,
+          visible: controller.quizAnswered.value,
+        )),
       ],
     );
   }
 
-  Widget _buildNavigationButtons(BuildContext context, LessonController controller, PageController pageController) {
+  Widget _buildNavigationButtons(BuildContext context, LessonController controller, PageController pageController, Color themeColor) {
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Row(
@@ -155,6 +134,10 @@ class LessonDetailScreen extends StatelessWidget {
                     controller.previousStep();
                     pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                   },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: themeColor),
+                    foregroundColor: themeColor,
+                  ),
                   child: const Text('السابق', style: TextStyle(fontFamily: 'cairo')),
                 )
               : const SizedBox.shrink()),
@@ -176,7 +159,7 @@ class LessonDetailScreen extends StatelessWidget {
                   : null,
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(120, 45),
-                backgroundColor: Get.theme.primaryColor,
+                backgroundColor: themeColor,
                 foregroundColor: Colors.white,
               ),
               child: Text(

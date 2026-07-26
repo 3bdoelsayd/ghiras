@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:quran/quran.dart' as quran;
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/material.dart';
 import '../data/translations/muyassar.dart';

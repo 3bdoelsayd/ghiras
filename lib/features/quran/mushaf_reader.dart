@@ -312,7 +312,7 @@ class _MushafReaderState extends State<MushafReader> {
               ),
               onPressed: () {
                 final info = PageSurahMap.getPageInfo(_currentPage);
-                final surahName = info?['surah'] ?? 'صفحة';
+                final surahName = info['surah'] ?? 'صفحة';
                 
                 if (isSaved) {
                   controller.removeFasilByPage(_currentPage);
@@ -340,7 +340,7 @@ class _MushafReaderState extends State<MushafReader> {
         title: Column(
           children: [
             Text(
-              info?['surah'] ?? '',
+              info['surah'] ?? '',
               style: TextStyle(
                 color: isDark ? Colors.white : AppColors.textDark,
                 fontWeight: FontWeight.bold,
@@ -349,7 +349,7 @@ class _MushafReaderState extends State<MushafReader> {
               ),
             ),
             Text(
-              'الجزء ${info?['juz']} • صفحة $_currentPage',
+              'الجزء ${info['juz']} • صفحة $_currentPage',
               style: TextStyle(
                 color: isDark ? Colors.white54 : Colors.grey[600],
                 fontSize: 10,
@@ -388,7 +388,7 @@ class _MushafReaderState extends State<MushafReader> {
                       color: AppColors.primary,
                       boxShadow: [
                         BoxShadow(
-                            color: AppColors.primary.withOpacity(0.5),
+                            color: AppColors.primary.withValues(alpha: 0.5),
                             blurRadius: 4)
                       ],
                     ),
@@ -441,7 +441,7 @@ class _MushafReaderState extends State<MushafReader> {
                   color: Colors.white)),
           icon: const Icon(Icons.check_circle_outline_rounded,
               color: Colors.white),
-          backgroundColor: AppColors.primary.withOpacity(0.9),
+          backgroundColor: AppColors.primary.withValues(alpha: 0.9),
           elevation: 4,
         ),
       )

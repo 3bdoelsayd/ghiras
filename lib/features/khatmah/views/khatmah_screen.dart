@@ -49,8 +49,8 @@ class KhatmahScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(35),
-            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.04), shape: BoxShape.circle),
-            child: Icon(Icons.menu_book_rounded, size: 70, color: AppColors.primary.withOpacity(0.2)),
+            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.04), shape: BoxShape.circle),
+            child: Icon(Icons.menu_book_rounded, size: 70, color: AppColors.primary.withValues(alpha: 0.2)),
           ),
           const SizedBox(height: 25),
           const Text('ابدأ رحلة جديدة مع القرآن', style: TextStyle(fontFamily: 'Cairo', fontSize: 18, color: AppColors.textDark, fontWeight: FontWeight.bold)),
@@ -83,7 +83,7 @@ class KhatmahScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 25,
             offset: const Offset(0, 8),
           ),
@@ -99,7 +99,7 @@ class KhatmahScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color: AppColors.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(Icons.auto_stories_rounded, color: AppColors.primary, size: 22),
@@ -119,7 +119,7 @@ class KhatmahScreen extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete_outline_rounded, color: Colors.red.withOpacity(0.4), size: 22),
+                  icon: Icon(Icons.delete_outline_rounded, color: Colors.red.withValues(alpha: 0.4), size: 22),
                   onPressed: () => _showDeleteConfirm(context, controller, khatmah),
                 ),
               ],
@@ -156,7 +156,7 @@ class KhatmahScreen extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: 'Cairo', 
                           fontSize: 13, 
-                          color: AppColors.primary.withOpacity(0.6), 
+                          color: AppColors.primary.withValues(alpha: 0.6), 
                           fontWeight: FontWeight.bold
                         )
                       ),
@@ -167,7 +167,7 @@ class KhatmahScreen extends StatelessWidget {
                           _pageIndicator('من صفحة', startPage.toString()),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 15),
-                            child: Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.primary.withOpacity(0.3)),
+                            child: Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.primary.withValues(alpha: 0.3)),
                           ),
                           _pageIndicator('إلى صفحة', targetPage.toString()),
                         ],
@@ -252,7 +252,7 @@ class KhatmahScreen extends StatelessWidget {
                       }
                     },
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.primary.withOpacity(0.3), width: 1.5),
+                      side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
                       foregroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -280,7 +280,7 @@ class KhatmahScreen extends StatelessWidget {
   Widget _buildDetailedInfo(IconData icon, String title, String value) {
     return Column(
       children: [
-        Icon(icon, color: AppColors.primary.withOpacity(0.4), size: 18),
+        Icon(icon, color: AppColors.primary.withValues(alpha: 0.4), size: 18),
         const SizedBox(height: 6),
         Text(title, style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.grey[500])),
         Text(value, style: const TextStyle(fontFamily: 'Cairo', fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
@@ -295,13 +295,13 @@ class KhatmahScreen extends StatelessWidget {
         children: [
           const Icon(Icons.check_circle_rounded, size: 12, color: Colors.green),
           const SizedBox(width: 4),
-          Text('ملتزم بالجدول', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.green.withOpacity(0.8), fontWeight: FontWeight.bold)),
+          Text('ملتزم بالجدول', style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.green.withValues(alpha: 0.8), fontWeight: FontWeight.bold)),
         ],
       );
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(8)),
       child: Text('متأخر ${khatmah.daysBehind} يوم', style: const TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.redAccent, fontWeight: FontWeight.bold)),
     );
   }
@@ -355,9 +355,9 @@ class KhatmahScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.03),
+                  color: AppColors.primary.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(25),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.05)),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
                 ),
                 child: const Text(
                   'اللَّهُمَّ ارْحَمْنِي بالقُرْءَانِ وَاجْعَلهُ لِي إِمَاماً وَنُوراً وَهُدًى وَرَحْمَةً * اللَّهُمَّ ذَكِّرْنِي مِنْهُ مَانَسِيتُ وَعَلِّمْنِي مِنْهُ مَاجَهِلْتُ وَارْزُقْنِي تِلاَوَتَهُ آنَاءَ اللَّيْلِ وَأَطْرَافَ النَّهَارِ وَاجْعَلْهُ لِي حُجَّةً يَارَبَّ العَالَمِينَ',

@@ -1,19 +1,21 @@
 part of 'player_bloc_bloc.dart';
 
 @immutable
-class PlayerBlocEvent {}
+class PlayerBlocEvent {
+  const PlayerBlocEvent();
+}
 
 class StartPlaying extends PlayerBlocEvent {
-  Moshaf moshaf;
-  Reciter reciter;
-  int suraNumber;
-  BuildContext buildContext;
-  // String suraName;
-  List jsonData;
-  var audioPlayer;
-  int initialIndex;
+  final Moshaf moshaf;
+  final Reciter reciter;
+  final int suraNumber;
+  final BuildContext buildContext;
+  // final String suraName;
+  final List jsonData;
+  final dynamic audioPlayer;
+  final int initialIndex;
 
-  StartPlaying({
+  const StartPlaying({
     required this.moshaf,
     required this.reciter,
     required this.suraNumber,
@@ -26,11 +28,11 @@ class StartPlaying extends PlayerBlocEvent {
 }
 
 class DownloadSurah extends PlayerBlocEvent {
-  Moshaf moshaf;
-  Reciter reciter;
-  String suraNumber;
-  String url;
-  DownloadSurah({
+  final Moshaf moshaf;
+  final Reciter reciter;
+  final String suraNumber;
+  final String url;
+  const DownloadSurah({
     required this.reciter,
     required this.moshaf,
     required this.suraNumber,
@@ -39,14 +41,18 @@ class DownloadSurah extends PlayerBlocEvent {
 }
 
 class DownloadAllSurahs extends PlayerBlocEvent {
-  Moshaf moshaf;
-  Reciter reciter;
-  DownloadAllSurahs({
+  final Moshaf moshaf;
+  final Reciter reciter;
+  const DownloadAllSurahs({
     required this.moshaf,
     required this.reciter,
   });
 }
 
-class ClosePlayerEvent extends PlayerBlocEvent {}
+class ClosePlayerEvent extends PlayerBlocEvent {
+  const ClosePlayerEvent();
+}
 
-class PausePlayer extends PlayerBlocEvent {}
+class PausePlayer extends PlayerBlocEvent {
+  const PausePlayer();
+}

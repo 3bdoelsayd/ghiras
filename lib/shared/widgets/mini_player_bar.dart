@@ -53,7 +53,7 @@ class MiniPlayerBar extends StatelessWidget {
                             width: 40.w,
                             height: 40.h,
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
+                              color: AppColors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10.r),
                               image: photoUrl != null 
                                 ? DecorationImage(
@@ -104,7 +104,7 @@ class MiniPlayerBar extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
+                    Divider(height: 1, color: Colors.grey.withValues(alpha: 0.1)),
                   ],
                 );
               },
@@ -170,7 +170,7 @@ class MiniPlayerBar extends StatelessWidget {
                 height: 32.h,
                 margin: EdgeInsets.symmetric(horizontal: 4.w),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: processingState == ProcessingState.loading ||

@@ -132,7 +132,7 @@ class _AthkarScreenState extends State<AthkarScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.black.withOpacity(0.3), AppColors.primary],
+                  colors: [Colors.black.withValues(alpha: 0.3), AppColors.primary],
                 ),
               ),
             ),
@@ -222,7 +222,7 @@ class _AthkarScreenState extends State<AthkarScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
       ),
       child: TextField(
         controller: _searchController,
@@ -245,12 +245,12 @@ class _AthkarScreenState extends State<AthkarScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.03)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: AppColors.primary.withOpacity(0.05),
+          backgroundColor: AppColors.primary.withValues(alpha: 0.05),
           child: const Icon(Icons.spa_rounded, color: AppColors.primary, size: 20),
         ),
         title: Text(

@@ -148,7 +148,7 @@ class _MushafScreenState extends State<MushafScreen> {
             fit: BoxFit.cover,
           ),
           Container(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
           ),
           const Center(
             child: Column(

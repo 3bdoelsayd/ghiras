@@ -6,6 +6,7 @@ import 'package:quran/quran.dart' as quran;
 import '../logic/mushaf_controller.dart';
 import '../logic/quran_audio_controller.dart';
 import '../data/quran_database_service.dart';
+import '../../../core/utils/font_service.dart';
 import '../../../core/constants/app_colors.dart';
 import 'ayah_options_sheet.dart';
 
@@ -24,6 +25,8 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
   void initState() {
     super.initState();
     _linesFuture = QuranDatabaseService.getPageLines(widget.pageNumber);
+    // تحميل الخط ديناميكياً عند فتح الصفحة
+    FontService.preloadFonts(widget.pageNumber);
   }
 
   @override
@@ -64,7 +67,7 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
               color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFFEFBF6),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+                  color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.1),
                   blurRadius: 15,
                   spreadRadius: 1,
                   offset: Offset(isLeftPage ? 10 : -10, 0),
@@ -315,15 +318,15 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
             height: 1.6,
             color: isDark ? Colors.white : Colors.black,
             backgroundColor: isSelected
-                ? AppColors.primary.withOpacity(0.2)
+                ? AppColors.primary.withValues(alpha: 0.2)
                 : isSelectedKey
-                ? AppColors.primary.withOpacity(0.15)
+                ? AppColors.primary.withValues(alpha: 0.15)
                 : isStarred
-                ? Colors.amber.withOpacity(0.1)
+                ? Colors.amber.withValues(alpha: 0.1)
                 : bookmarkColor != null
-                ? bookmarkColor.withOpacity(0.2)
+                ? bookmarkColor.withValues(alpha: 0.2)
                 : isBookmarked
-                ? Colors.orange.withOpacity(0.15)
+                ? Colors.orange.withValues(alpha: 0.15)
                 : Colors.transparent,
             decoration: (isBookmarked || bookmarkColor != null)
                 ? TextDecoration.underline
@@ -370,15 +373,15 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
         style: TextStyle(
           color: isDark ? Colors.white : Colors.black,
           backgroundColor: isSelected
-              ? AppColors.primary.withOpacity(0.2)
+              ? AppColors.primary.withValues(alpha: 0.2)
               : isSelectedKey
-              ? AppColors.primary.withOpacity(0.15)
+              ? AppColors.primary.withValues(alpha: 0.15)
               : isStarred
-              ? Colors.amber.withOpacity(0.1)
+              ? Colors.amber.withValues(alpha: 0.1)
               : bookmarkColor != null
-              ? bookmarkColor.withOpacity(0.2)
+              ? bookmarkColor.withValues(alpha: 0.2)
               : isBookmarked
-              ? Colors.orange.withOpacity(0.15)
+              ? Colors.orange.withValues(alpha: 0.15)
               : Colors.transparent,
           decoration:
           (isBookmarked || bookmarkColor != null)
@@ -455,7 +458,7 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
         fit: BoxFit.contain,
         color: isSpecialPage
             ? const Color(0xFF2E7D32)
-            : (isDark ? Colors.white : AppColors.primary.withOpacity(0.9)),
+            : (isDark ? Colors.white : AppColors.primary.withValues(alpha: 0.9)),
       ),
     );
   }

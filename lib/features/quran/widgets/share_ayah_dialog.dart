@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:quran/quran.dart' as quran;
 import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 import '../logic/mushaf_controller.dart';
 import '../views/ayah_share_preview.dart';
 
@@ -171,7 +172,8 @@ class _ShareAyahDialogState extends State<ShareAyahDialog> {
     }
 
     shareContent += "\n\n[سورة $surahName: آية $fromAyah - $toAyah]";
-    shareContent += "\nتمت المشاركة من تطبيق غراس";
+    shareContent += "\nتمت المشاركة من تطبيق ${AppStrings.appName}";
+    shareContent += "\n${AppStrings.appStoreLink}";
 
     await Share.share(shareContent);
     if (mounted) Navigator.pop(context);

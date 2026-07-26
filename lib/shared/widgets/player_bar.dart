@@ -2,14 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:animate_do/animate_do.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart' as m;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttericon/linearicons_free_icons.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
-import 'package:quran/quran.dart' as quran;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:back_button_interceptor/back_button_interceptor.dart';
 
@@ -51,7 +49,7 @@ class _PlayerBarState extends State<PlayerBar> {
   }
 
   List favoriteSurahList = [];
-  addFavorites() {
+  void addFavorites() {
     favoriteSurahList = json.decode(getValue("favoriteSurahList") ?? "[]");
     setState(() {});
   }
@@ -102,7 +100,7 @@ class _PlayerBarState extends State<PlayerBar> {
                                                 color: AppColors.primary,
                                                 boxShadow: [
                                                   BoxShadow(
-                                                    color: Colors.black.withOpacity(0.2),
+                                                    color: Colors.black.withValues(alpha: 0.2),
                                                     blurRadius: 10,
                                                   )
                                                 ],
@@ -312,7 +310,7 @@ class _PlayerBarState extends State<PlayerBar> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           boxShadow: [
-                            BoxShadow(color: AppColors.primary.withOpacity(0.2), blurRadius: 30, spreadRadius: 5)
+                            BoxShadow(color: AppColors.primary.withValues(alpha: 0.2), blurRadius: 30, spreadRadius: 5)
                           ],
                         ),
                         child: const CircleAvatar(
@@ -350,7 +348,7 @@ class _PlayerBarState extends State<PlayerBar> {
                 value: position.inSeconds.toDouble(),
                 max: total.inSeconds.toDouble() > 0 ? total.inSeconds.toDouble() : 1.0,
                 activeColor: AppColors.primary,
-                inactiveColor: AppColors.primary.withOpacity(0.2),
+                inactiveColor: AppColors.primary.withValues(alpha: 0.2),
                 onChanged: (value) {
                   state.audioPlayer.seek(Duration(seconds: value.toInt()));
                 },
