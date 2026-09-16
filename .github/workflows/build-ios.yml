@@ -1,4 +1,4 @@
-name: Build iOS IPA
+name: Build iOS
 
 on:
   push:
@@ -8,26 +8,19 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.47.3'
           channel: 'stable'
-          cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
+      - run: flutter pub get
 
-      - name: Build IPA (no codesign)
-        run: flutter build ipa --no-codesign
+      - run: flutter build ios --release --no-codesign
 
-      - name: Upload IPA
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: ghiras-ipa
-          path: build/ios/ipa/*.ipa
+          name: ios-build
+          path: build/ios/iphoneos
