@@ -19,7 +19,13 @@ jobs:
       - name: Disable Swift Package Manager
         run: flutter config --no-enable-swift-package-manager
 
+      - name: Clean project
+        run: flutter clean
+
       - run: flutter pub get
+
+      - name: Debug xcconfig
+        run: cat ios/Flutter/Generated.xcconfig
 
       - run: flutter build ipa --no-codesign
 
