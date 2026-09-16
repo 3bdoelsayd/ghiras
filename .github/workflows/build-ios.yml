@@ -27,20 +27,23 @@ jobs:
       - name: Install CocoaPods
         run: cd ios && pod install
 
-      - name: Build iOS app
-        continue-on-error: true
-        run: flutter build ios --release --no-codesign
+      - name: Build unsigned app via xcodebuild
+        run: |
+          xcodebuild build \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath build/ios_manual \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
 
       - name: Verify app was built
         run: |
-          if [ -d "build/ios/iphoneos/Runner.app" ]; then
-            echo "App built successfully despite Flutter's warning."
-          else
-            echo "App was NOT built. Failing."
-            exit 1
-          fi
+          find build/ios_manual -name "Runner.app" -maxdepth 6
 
       - uses: actions/upload-artifact@v4
         with:
           name: ghiras-ios-app
-          path: build/ios/iphoneos/Runner.app
+          path: build/ios_manual/Build/Products/Release-iphoneos/Runner.app
