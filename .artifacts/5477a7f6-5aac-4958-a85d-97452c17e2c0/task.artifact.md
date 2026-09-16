@@ -1,0 +1,5 @@
+- [ ] Upgrade Android Gradle Plugin in `settings.gradle.kts`
+- [ ] Upgrade Kotlin Gradle Plugin in `settings.gradle.kts`
+- [ ] Upgrade Gradle version in `gradle-wrapper.properties`
+- [ ] Verify build with `flutter build apk --debug`
+- [ ] Verify app launch on emulator

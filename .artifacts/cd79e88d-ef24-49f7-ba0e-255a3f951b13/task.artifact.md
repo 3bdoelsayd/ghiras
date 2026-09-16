@@ -1,0 +1,2 @@
+- `[ ]` Update AGP and Kotlin versions in `settings.gradle.kts`
+- `[ ]` Verify build with `flutter build apk --debug`
