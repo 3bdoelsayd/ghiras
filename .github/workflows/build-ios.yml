@@ -24,8 +24,8 @@ jobs:
 
       - run: flutter pub get
 
-      - name: Debug xcconfig
-        run: cat ios/Flutter/Generated.xcconfig
+      - name: Install CocoaPods
+        run: cd ios && pod install
 
       - run: flutter build ipa --no-codesign
 
