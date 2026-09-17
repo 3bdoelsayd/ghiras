@@ -29,6 +29,7 @@ jobs:
           rm -rf ios/Podfile.lock
           rm -rf ios/.symlinks
           rm -rf ~/.pub-cache
+          rm -f pubspec.lock
 
       - run: flutter pub get
 
