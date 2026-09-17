@@ -335,6 +335,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
                                 CODE_SIGNING_ALLOWED = NO;
                                 CODE_SIGNING_REQUIRED = NO;
+                                                   DEVELOPMENT_TEAM = ABCDE12345;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -457,6 +458,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
                                 CODE_SIGNING_ALLOWED = NO;
                                 CODE_SIGNING_REQUIRED = NO;
+                                                   DEVELOPMENT_TEAM = ABCDE12345;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -516,6 +518,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
                                 CODE_SIGNING_ALLOWED = NO;
                                 CODE_SIGNING_REQUIRED = NO;
+                                                   DEVELOPMENT_TEAM = ABCDE12345;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
