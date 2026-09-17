@@ -103,14 +103,8 @@ class NotificationService extends GetxService {
       await requestFullPermissions();
       await checkBatteryOptimization();
     } else if (Platform.isIOS) {
-      // لـ iOS نطلب صلاحية الإشعارات والـ Foreground الموثوقة والموقع
-      await _notificationsPlugin
-          .resolvePlatformSpecificImplementation<DarwinFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
+      // الصلاحيات تطلب تلقائياً بواسطة DarwinInitializationSettings عند الـ initialize
+      // نطلب هنا صلاحية الموقع فقط لضمان عمل مواقيت الصلاة بدقة
       await Permission.locationWhenInUse.request();
     }
 
