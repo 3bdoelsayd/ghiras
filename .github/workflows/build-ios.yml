@@ -35,10 +35,16 @@ jobs:
 
       - name: Debug package resolution
         run: |
-          echo "--- total packages count ---"
-          cat .dart_tool/package_config.json | grep -c '"name"'
-          echo "--- url_launcher entries ---"
-          grep "url_launcher" .dart_tool/package_config.json || echo "NOT FOUND AT ALL"
+          python3 -c "
+          import json
+          data = json.load(open('.dart_tool/package_config.json'))
+          names = [p['name'] for p in data['packages']]
+          matches = [n for n in names if 'url_launcher' in n]
+          print('Total packages:', len(names))
+          print('url_launcher matches:', matches)
+          print('Is url_launcher present exactly?', 'url_launcher' in names)
+          print('Is url_launcher_ios present exactly?', 'url_launcher_ios' in names)
+          "
 
       - name: Install CocoaPods
         run: cd ios && pod install
