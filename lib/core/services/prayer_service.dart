@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart'; // ✅ أضفنا geocoding
 import 'package:get/get.dart';
@@ -291,12 +293,12 @@ class PrayerService extends GetxController {
   // دالة تشغيل الأذان الكامل من ملفات الـ assets
   void _playFullLocalAzan() async {
     try {
-      final audioPlayerInstance = Get.find<com.just_audio.AudioPlayer>(); // استخدام اسم الباكج الصحيح للـ AudioPlayer المشترك
+      final audioPlayerInstance = Get.find<AudioPlayer>(); // استخدام الـ AudioPlayer المشترك المسجل في GetX
       await audioPlayerInstance.stop();
       await audioPlayerInstance.setAudioSource(
-        com.just_audio.AudioSource.uri(
+        AudioSource.uri(
           Uri.parse("asset:///assets/audio/azan.mp3"),
-          tag: const com.just_audio.MediaItem(
+          tag: const MediaItem(
             id: 'live_azan_ios',
             album: 'صوت الأذان',
             title: 'صلاة الفريضة',
