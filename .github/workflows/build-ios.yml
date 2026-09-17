@@ -31,7 +31,8 @@ jobs:
           rm -rf ~/.pub-cache
           rm -f pubspec.lock
 
-      - run: flutter pub get
+      - name: Pub get (verbose)
+        run: flutter pub get -v 2>&1 | grep -i "url_launcher" || echo "No url_launcher mentions in pub get output"
 
       - name: Debug package resolution
         run: |
