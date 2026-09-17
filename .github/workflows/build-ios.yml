@@ -27,23 +27,14 @@ jobs:
       - name: Install CocoaPods
         run: cd ios && pod install
 
-      - name: Build unsigned app via xcodebuild
-        run: |
-          xcodebuild build \
-            -workspace ios/Runner.xcworkspace \
-            -scheme Runner \
-            -sdk iphoneos \
-            -configuration Release \
-            -derivedDataPath build/ios_manual \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+      - name: Build iOS app
+        run: flutter build ios --release --no-codesign
 
       - name: Verify app was built
         run: |
-          find build/ios_manual -name "Runner.app" -maxdepth 6
+          find build/ios/iphoneos -name "Runner.app" -maxdepth 2
 
       - uses: actions/upload-artifact@v4
         with:
           name: ghiras-ios-app
-          path: build/ios_manual/Build/Products/Release-iphoneos/Runner.app
+          path: build/ios/iphoneos/Runner.app
