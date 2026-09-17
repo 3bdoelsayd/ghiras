@@ -119,7 +119,10 @@ class PrayerService extends GetxController {
     if (permission == LocationPermission.deniedForever) return Future.error('تم رفض إذن الموقع بشكل دائم');
 
     return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.best,
+      desiredAccuracy: LocationAccuracy.low, // استخدام دقة منخفضة في البداية لتسريع الحصول على الإحداثيات
+    ).timeout(
+      const Duration(seconds: 4),
+      onTimeout: () => throw TimeoutException('استغرق تحديد الموقع وقتاً أطول من المتوقع'),
     );
   }
 

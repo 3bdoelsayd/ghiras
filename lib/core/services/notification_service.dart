@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -76,8 +77,16 @@ class NotificationService extends GetxService {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/launcher_icon');
 
+    const DarwinInitializationSettings initializationSettingsDarwin =
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
+      iOS: initializationSettingsDarwin,
     );
 
     await _notificationsPlugin.initialize(
@@ -86,17 +95,22 @@ class NotificationService extends GetxService {
       onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
 
-    // 2. طلب الصلاحيات بعد التهيئة لضمان استقرار المحرك
-    await requestFullPermissions();
-    
-    // 3. التحقق من تحسين البطارية (هام جداً لنسخة المتجر)
-    await checkBatteryOptimization();
+    // 2. طلب الصلاحيات والتحقق من البطارية (فقط للأندرويد، أو بشكل آمن لـ iOS)
+    if (Platform.isAndroid) {
+      await requestFullPermissions();
+      await checkBatteryOptimization();
+    } else if (Platform.isIOS) {
+      // لـ iOS نطلب صلاحية الإشعارات العادية والموقع بشكل مباشر
+      await Permission.notification.request();
+      await Permission.locationWhenInUse.request();
+    }
 
     _initCompleter.complete();
     updateScheduledNotifications();
   }
 
   Future<void> checkBatteryOptimization() async {
+    if (!Platform.isAndroid) return;
     if (await Permission.ignoreBatteryOptimizations.isDenied) {
       Get.defaultDialog(
         title: "تنبيه هام للأذان",
@@ -113,6 +127,7 @@ class NotificationService extends GetxService {
   }
 
   Future<void> requestFullPermissions() async {
+    if (!Platform.isAndroid) return;
     // 1. صلاحية الإشعارات (لأندرويد 13+)
     PermissionStatus status = await Permission.notification.status;
     if (!status.isGranted) {
