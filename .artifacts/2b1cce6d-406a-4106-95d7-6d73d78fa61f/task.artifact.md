@@ -1,6 +1,5 @@
-# المهام المطلوبة لإصلاح تشغيل تطبيق iOS
+# المهام المطلوبة لتفعيل التحكم الخارجي والاضان في iOS
 
-- [x] تحديث ملف `ios/Runner/Info.plist` لإضافة صلاحيات الموقع والإشعارات اللازمة لـ iOS.
-- [x] تعديل كود `lib/core/services/notification_service.dart` لإضافة تهيئة متوافقة مع iOS وتجنب النوافذ المنبثقة المبكرة.
-- [x] تعديل كود `lib/core/services/prayer_service.dart` للتأكد من عدم حظر خدمة تحديد الموقع أثناء التشغيل الأولي.
-- [x] التحقق من الكود والتأكد من سلامة البناء.
+- [x] تهيئة `JustAudioBackground` وإعداد الـ `AudioSession` في `lib/main.dart`.
+- [x] تعديل كود صوت الإشعارات في `lib/core/services/notification_service.dart` لدعم iOS الافتراضي والموثوق.
+- [x] التحقق من الكود وإتمام الرفع.

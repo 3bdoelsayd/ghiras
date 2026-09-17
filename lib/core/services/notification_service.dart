@@ -352,7 +352,7 @@ class NotificationService extends GetxService {
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
-            sound: sound != null ? '$sound.caf' : null,
+            sound: null, // استخدام صوت التنبيه الافتراضي الموثوق لنظام iOS لمنع حجب الإشعار
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

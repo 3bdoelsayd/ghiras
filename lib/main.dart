@@ -35,6 +35,16 @@ void main() async {
   // 1. ضمان استقرار المحرك
   WidgetsFlutterBinding.ensureInitialized();
 
+  // تهيئة الخلفية الصوتية للتحكم من الستارة وشاشة القفل
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.ryanheise.bg_audio.channel.audio',
+    androidNotificationChannelName: 'تلاوة القرآن الكريم',
+    androidNotificationOngoing: true,
+  );
+
+  final session = await AudioSession.instance;
+  await session.configure(const AudioSessionConfiguration.music());
+
   // تفعيل ميزة العرض حتى حافة الشاشة (Edge-to-Edge) برمجياً
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
