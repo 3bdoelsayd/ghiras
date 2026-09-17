@@ -34,10 +34,10 @@ jobs:
 
       - name: Debug package resolution
         run: |
-          echo "--- pub get output check ---"
-          cat .dart_tool/package_config.json | head -50
           echo "--- total packages count ---"
           cat .dart_tool/package_config.json | grep -c '"name"'
+          echo "--- url_launcher entries ---"
+          grep "url_launcher" .dart_tool/package_config.json || echo "NOT FOUND AT ALL"
 
       - name: Install CocoaPods
         run: cd ios && pod install
