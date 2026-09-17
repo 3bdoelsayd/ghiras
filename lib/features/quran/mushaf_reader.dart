@@ -8,6 +8,9 @@ import 'widgets/quran_page_widget.dart';
 import 'logic/mushaf_controller.dart';
 import 'logic/quran_audio_controller.dart';
 import '../khatmah/logic/khatmah_controller.dart';
+import '../../core/services/sleep_timer_service.dart';
+import '../../shared/widgets/sleep_timer_dialog.dart';
+import '../../shared/widgets/glass_container.dart';
 
 class MushafReader extends StatefulWidget {
   final int initialPage;
@@ -22,8 +25,7 @@ class _MushafReaderState extends State<MushafReader> {
   late PageController _pageController;
   late int _currentPage;
   late Box _settingsBox;
-  bool _wirdDialogShown = false;
-  bool _wirdCompleted = false;
+  int? _lockPage;
 
   @override
   void initState() {
@@ -31,22 +33,10 @@ class _MushafReaderState extends State<MushafReader> {
     _currentPage = widget.initialPage;
     _settingsBox = Hive.box('settings');
 
-    _pageController = PageController(initialPage: _currentPage - 1);
-    
-    // ... rest of initState
+    // ✅ تحديد صفحة القفل عند فتح المصحف
+    _lockPage = _todayTargetPage;
 
-    // ✅ Listener يمنع التقليب بعد إتمام الورد
-    _pageController.addListener(() {
-      if (_wirdCompleted) {
-        final target = _todayTargetPage;
-        if (target != null && _pageController.page != null) {
-          final maxPage = (target - 1).toDouble();
-          if (_pageController.page! > maxPage) {
-            _pageController.jumpToPage(target - 1);
-          }
-        }
-      }
-    });
+    _pageController = PageController(initialPage: _currentPage - 1);
 
     if (!Get.isRegistered<MushafController>()) {
       Get.put(MushafController(), permanent: true);
@@ -80,32 +70,28 @@ class _MushafReaderState extends State<MushafReader> {
 
   void _onPageChanged(int index) {
     if (!mounted) return;
-    setState(() => _currentPage = index + 1);
+    int newPage = index + 1;
+    setState(() => _currentPage = newPage);
     _settingsBox.put('last_quran_page', _currentPage);
     _trackDailyWird(_currentPage);
 
     if (widget.khatmahId != null && Get.isRegistered<KhatmahController>()) {
-      Get.find<KhatmahController>()
-          .updateProgress(widget.khatmahId!, _currentPage);
+      final kController = Get.find<KhatmahController>();
+      final idx = kController.khatmat.indexWhere((k) => k.id == widget.khatmahId);
+      
+      if (idx != -1) {
+        final khatmah = kController.khatmat[idx];
+        
+        // ✅ منع تسجيل الصفحة الجديدة كـ "مقروءة" إذا كانت هي بداية الورد القادم
+        bool isStartOfNextWird = khatmah.isEndOfPortion(newPage - 1);
+        
+        if (!isStartOfNextWird) {
+          kController.updateProgress(widget.khatmahId!, newPage);
+        }
+      }
     }
 
     Get.find<MushafController>().onPageChanged(index);
-
-    // ✅ لما يوصل للهدف
-    final target = _todayTargetPage;
-    if (target != null && _currentPage >= target && !_wirdDialogShown) {
-      _wirdDialogShown = true;
-      setState(() => _wirdCompleted = true);
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          if (_currentPage >= 604) {
-            _showKhatmahDuaDialog();
-          } else {
-            _showFinishedWirdDialog();
-          }
-        }
-      });
-    }
   }
 
   void _trackDailyWird(int page) {
@@ -151,7 +137,16 @@ class _MushafReaderState extends State<MushafReader> {
           ElevatedButton(
             onPressed: () {
               if (Get.isRegistered<KhatmahController>()) {
-                Get.find<KhatmahController>().finishTodayPortion(widget.khatmahId!);
+                final kController = Get.find<KhatmahController>();
+                final idx = kController.khatmat.indexWhere((k) => k.id == widget.khatmahId);
+                if (idx != -1) {
+                  final khatmah = kController.khatmat[idx];
+                  // ✅ لا تقم بإنهاء الورد أوتوماتيكياً إذا كان المستخدم قد وصل للهدف يدوياً بالفعل
+                  // هذا يمنع "قفزة" الورد للجزء التالي
+                  if (khatmah.lastReadPage < khatmah.targetPageForToday) {
+                    kController.finishTodayPortion(widget.khatmahId!);
+                  }
+                }
               }
               Navigator.pop(context); // Close dialog
               Navigator.pop(context); // Close reader
@@ -363,7 +358,7 @@ class _MushafReaderState extends State<MushafReader> {
         children: [
           PageView.builder(
             controller: _pageController,
-            itemCount: 604,
+            itemCount: _lockPage ?? 604, // ✅ القفل هنا
             reverse: false,
             physics: const CustomPageViewScrollPhysics(),
             onPageChanged: _onPageChanged,
@@ -388,7 +383,7 @@ class _MushafReaderState extends State<MushafReader> {
                       color: AppColors.primary,
                       boxShadow: [
                         BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.5),
+                            color: AppColors.primary.withOpacity(0.5),
                             blurRadius: 4)
                       ],
                     ),
@@ -396,56 +391,104 @@ class _MushafReaderState extends State<MushafReader> {
                 ),
               ),
             ),
+          Obx(() {
+            final audioController = Get.find<QuranAudioController>();
+            if (audioController.currentSurah.value != 0) {
+              return Positioned(
+                bottom: 20,
+                left: 20,
+                right: 20,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 460),
+                    child: _buildAudioPlayer(audioController),
+                  ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
         ],
       ),
-      floatingActionButtonLocation:
-      FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: _shouldShowFinishButton()
-          ? Container(
-        margin: const EdgeInsets.only(bottom: 20),
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            if (Get.isRegistered<QuranAudioController>()) {
-              Get.find<QuranAudioController>().stop();
-            }
-            if (widget.khatmahId != null &&
-                Get.isRegistered<KhatmahController>()) {
-              final kController = Get.find<KhatmahController>();
-              final index = kController.khatmat
-                  .indexWhere((k) => k.id == widget.khatmahId);
-              if (index != -1) {
-                if (_currentPage >= 604) {
-                  kController.completeKhatmah(widget.khatmahId!);
-                  _showKhatmahDuaDialog();
-                  return;
-                } else {
-                  kController.finishTodayPortion(widget.khatmahId!);
-                }
-              }
-            }
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('تقبل الله طاعتك، تم حفظ تقدمك',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontFamily: 'Cairo')),
-                backgroundColor: AppColors.primary,
-                duration: Duration(seconds: 2),
+    );
+  }
+
+  Widget _buildAudioPlayer(QuranAudioController audio) {
+    final timerService = Get.find<SleepTimerService>();
+
+    return GlassContainer(
+      opacity: 0.8,
+      blur: 20,
+      borderRadius: 24,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Obx(() => Row(
+          children: [
+            IconButton(
+              icon: audio.isLoading.value
+                  ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+                  : Icon(
+                  audio.isPlaying.value
+                      ? Icons.pause_circle_filled
+                      : Icons.play_circle_fill,
+                  size: 40,
+                  color: AppColors.primary),
+              onPressed: audio.togglePlay,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'آية ${audio.currentAyah.value}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      if (timerService.isActive)
+                        Text(
+                          timerService.formattedRemainingTime,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  LinearProgressIndicator(
+                    value: audio.progress.value,
+                    backgroundColor: Colors.black12,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primary),
+                  ),
+                ],
               ),
-            );
-            Navigator.pop(context);
-          },
-          label: const Text('أتممت الورد',
-              style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white)),
-          icon: const Icon(Icons.check_circle_outline_rounded,
-              color: Colors.white),
-          backgroundColor: AppColors.primary.withValues(alpha: 0.9),
-          elevation: 4,
-        ),
-      )
-          : null,
+            ),
+            IconButton(
+              icon: Icon(
+                timerService.isActive ? Icons.timer_rounded : Icons.timer_outlined,
+                size: 20,
+                color: timerService.isActive ? AppColors.primary : Colors.grey,
+              ),
+              onPressed: () => SleepTimerDialog.show(context),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close_rounded,
+                  size: 20, color: Colors.grey),
+              onPressed: audio.stop,
+            ),
+          ],
+        )),
+      ),
     );
   }
 }

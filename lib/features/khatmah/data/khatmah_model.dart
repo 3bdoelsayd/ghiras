@@ -78,14 +78,39 @@ class KhatmahModel {
     }
   }
 
+  static const List<int> juzStartPages = [1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 221, 242, 262, 282, 302, 322, 342, 362, 382, 402, 422, 442, 462, 482, 502, 522, 542, 562, 582, 605];
+
   int get targetPageForToday {
     try {
-      int ppd = pagesPerDay;
-      int portionsCompleted = (readPages.length / (ppd > 0 ? ppd : 20)).floor();
-      int target = initialPage + ((portionsCompleted + 1) * ppd) - 1;
-      return target.clamp(1, 604);
+      int totalPages = 605 - initialPage;
+      int days = durationDays > 0 ? durationDays : 30;
+      
+      // البحث عن أول يوم (d) تكون نهايته بعد آخر صفحة تمت قراءتها
+      for (int d = 1; d <= days; d++) {
+        int target = (initialPage + (d * totalPages / days).ceil() - 1).clamp(1, 604);
+        if (target > lastReadPage) {
+          return target;
+        }
+      }
+      return 604;
     } catch (_) {
       return (lastReadPage + 20).clamp(1, 604);
+    }
+  }
+
+  bool isEndOfPortion(int page) {
+    try {
+      int totalPages = 605 - initialPage;
+      int days = durationDays > 0 ? durationDays : 30;
+
+      // تحقق مما إذا كانت هذه الصفحة تمثل نهاية ورد لأي يوم من الأيام
+      for (int d = 1; d <= days; d++) {
+        int target = (initialPage + (d * totalPages / days).ceil() - 1).clamp(1, 604);
+        if (page == target) return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
     }
   }
 

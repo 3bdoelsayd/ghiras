@@ -3,17 +3,34 @@ import 'package:get/get.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/sleep_timer_service.dart';
 
-class SleepTimerDialog extends StatelessWidget {
+class SleepTimerDialog extends StatefulWidget {
   const SleepTimerDialog({super.key});
 
   static void show(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
-      builder: (context) => const SleepTimerDialog(),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: const SleepTimerDialog(),
+      ),
     );
+  }
+
+  @override
+  State<SleepTimerDialog> createState() => _SleepTimerDialogState();
+}
+
+class _SleepTimerDialogState extends State<SleepTimerDialog> {
+  final TextEditingController _customMinsController = TextEditingController();
+
+  @override
+  void dispose() {
+    _customMinsController.dispose();
+    super.dispose();
   }
 
   @override
@@ -62,7 +79,7 @@ class SleepTimerDialog extends StatelessWidget {
                       Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.withValues(alpha: 0.1),
+                      backgroundColor: Colors.red.withOpacity(0.1),
                       foregroundColor: Colors.red,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -74,20 +91,77 @@ class SleepTimerDialog extends StatelessWidget {
                 ],
               );
             }
-            return Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              alignment: WrapAlignment.center,
+            return Column(
               children: [
-                _buildTimerOption(context, timerService, '15 دقيقة', 15),
-                _buildTimerOption(context, timerService, '30 دقيقة', 30),
-                _buildTimerOption(context, timerService, '45 دقيقة', 45),
-                _buildTimerOption(context, timerService, 'ساعة', 60),
-                _buildTimerOption(context, timerService, 'ساعتين', 120),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    _buildTimerOption(context, timerService, '15 دقيقة', 15),
+                    _buildTimerOption(context, timerService, '30 دقيقة', 30),
+                    _buildTimerOption(context, timerService, '45 دقيقة', 45),
+                    _buildTimerOption(context, timerService, 'ساعة', 60),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Divider(),
+                const SizedBox(height: 16),
+                const Text('أو حدد وقتك الخاص بالدقائق:', 
+                  style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: Colors.grey)
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                      ),
+                      child: TextField(
+                        controller: _customMinsController,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        decoration: const InputDecoration(
+                          hintText: '00',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        final mins = int.tryParse(_customMinsController.text);
+                        if (mins != null && mins > 0) {
+                          timerService.setTimer(Duration(minutes: mins));
+                          Navigator.pop(context);
+                        } else {
+                          Get.snackbar('تنبيه', 'يرجى إدخال عدد دقائق صحيح', 
+                            snackPosition: SnackPosition.BOTTOM
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      ),
+                      child: const Text('بدء', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
               ],
             );
           }),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -103,7 +177,7 @@ class SleepTimerDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(

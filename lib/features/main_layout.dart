@@ -72,13 +72,13 @@ class _GhirasBottomBar extends StatelessWidget {
           boxShadow: [
             // ظل سفلي عميق للبروز
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
+              color: Colors.black.withOpacity(0.12),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
             // ظل علوي فاتح جداً لتحديد الحواف (إيحاء 3D)
             BoxShadow(
-              color: Colors.white.withValues(alpha: 0.8),
+              color: Colors.white.withOpacity(0.8),
               blurRadius: 2,
               offset: const Offset(0, -1),
             ),
@@ -178,11 +178,11 @@ class _NavItem extends StatelessWidget {
               duration: const Duration(milliseconds: 250),
               padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h), // تقليل الحشو
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : Colors.transparent,
+                color: isSelected ? AppColors.primary.withOpacity(0.08) : Colors.transparent,
                 borderRadius: BorderRadius.circular(10.r),
                 boxShadow: isSelected ? [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.primary.withOpacity(0.1),
                     blurRadius: 3,
                     offset: const Offset(0, 1),
                   )

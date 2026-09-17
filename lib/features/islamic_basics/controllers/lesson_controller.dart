@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -43,7 +44,7 @@ class LessonController extends GetxController {
       lessons.sort((a, b) => a.order.compareTo(b.order));
       _updateLessonsCompletionStatus();
     } catch (e) {
-      print("Error loading lessons: $e");
+      debugPrint("Error loading lessons: $e");
     } finally {
       isLoading(false);
     }

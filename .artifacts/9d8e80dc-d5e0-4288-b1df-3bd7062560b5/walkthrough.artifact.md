@@ -1,36 +1,30 @@
-# ملخص إصلاحات الأذان لنسخة المتجر
+# ملخص تحديث أدوات البناء (Gradle & Kotlin)
 
-تم الانتهاء من جميع التعديلات اللازمة لضمان عمل الأذان بشكل موثوق عند تحميل التطبيق من متجر جوجل بلاي.
+تم تحديث ملفات التكوين الخاصة بالأندرويد لتعمل بأحدث الإصدارات المستقرة المطلوبة لعام 2026، مما يزيل التحذيرات السابقة ويضمن توافق التطبيق مع متجر جوجل.
 
 ## التغييرات التي تم تنفيذها:
 
-### 1. الإعدادات التقنية (Android)
-- **إضافة إذن `USE_EXACT_ALARM`**: لضمان أن النظام يسمح للتطبيق بإطلاق الأذان في وقته بالضبط دون تأخير.
-- **تحديث إصدار الـ SDK**: تم ضبط `targetSdk` على **35** لضمان أفضل توافق مع أنظمة أندرويد الحديثة (13 و 14 و 15).
-- **حماية ملف الصوت**: التأكد من أن ملف `azan.mp3` لن يتم حذفه أثناء بناء نسخة الـ Release.
+### 1. تحديث محرك Gradle
+- تم رفع الإصدار في [gradle-wrapper.properties](file:///C:/Users/Disney/AndroidStudioProjects/ghiras/android/gradle/wrapper/gradle-wrapper.properties) من 8.14 إلى **9.1.0**.
 
-### 2. تجربة المستخدم والصلاحيات
-- **تنبيه "تحسين البطارية"**: سيظهر للمستخدم تنبيه يطلب منه استثناء التطبيق من توفير البطارية، وهو أمر ضروري جداً لضمان عدم توقف الأذان في الخلفية.
-- **تحسين القنوات**: تم ضبط قناة الأذان لتكون بـ "أعلى أولوية" لتجاوز وضع الصمت في أغلب الهواتف.
+### 2. تحديث إضافات الأندرويد (AGP)
+- تم تحديث `com.android.application` في [settings.gradle.kts](file:///C:/Users/Disney/AndroidStudioProjects/ghiras/android/settings.gradle.kts) من 8.11.1 إلى **9.0.1**.
 
-### 3. ميزة "تجربة الأذان" الجديدة
-- تم إضافة دالة `testAthan()` في الكود. يمكنك الآن إضافة زر في واجهة الإعدادات يقوم بتشغيل الأذان بعد 5 ثوانٍ لاختبار عمله في وضع الـ Release.
+### 3. تحديث لغة Kotlin
+- تم رفع إصدار `org.jetbrains.kotlin.android` إلى **2.3.20**.
 
-## تعليمات هامة بعد التحديث:
+## تعليمات هامة للتشغيل القادم:
 
 > [!IMPORTANT]
-> **الاختبار قبل الرفع**: يرجى تشغيل التطبيق باستخدام الأمر التالي في الـ Terminal قبل رفعه للمتجر:
-> ```bash
-> flutter run --release
-> ```
-> هذا يحاكي تماماً ما سيحدث للمستخدم بعد التحميل من المتجر.
+> **أول عملية بناء (Build)**: بما أننا حدثنا إصدار Gradle، سيقوم الجهاز بتحميل الملفات الجديدة (حوالي 150 ميجا بايت) عند أول تشغيل. يرجى التأكد من استقرار اتصال الإنترنت.
 
 > [!TIP]
-> **جوجل بلاي**: عند الرفع، قد تسألك جوجل عن سبب استخدام "Exact Alarms". الإجابة ببساطة هي أن التطبيق هو تطبيق "أذان ومواقيت صلاة" يحتاج للدقة الزمنية.
+> **تنظيف المشروع**: يفضل تشغيل الأمر التالي في Terminal قبل البدء بالبناء لضمان مسح أي مخلفات قديمة:
+> ```bash
+> flutter clean
+> flutter pub get
+> ```
 
----
 تم تحديث الملفات التالية بنجاح:
-- [AndroidManifest.xml](file:///C:/Users/Disney/AndroidStudioProjects/ghiras/android/app/src/main/AndroidManifest.xml)
-- [build.gradle.kts](file:///C:/Users/Disney/AndroidStudioProjects/ghiras/android/app/build.gradle.kts)
-- [notification_service.dart](file:///C:/Users/Disney/AndroidStudioProjects/ghiras/lib/core/services/notification_service.dart)
-- [prayer_service.dart](file:///C:/Users/Disney/AndroidStudioProjects/ghiras/lib/core/services/prayer_service.dart)
+- [gradle-wrapper.properties](file:///C:/Users/Disney/AndroidStudioProjects/ghiras/android/gradle/wrapper/gradle-wrapper.properties)
+- [settings.gradle.kts](file:///C:/Users/Disney/AndroidStudioProjects/ghiras/android/settings.gradle.kts)

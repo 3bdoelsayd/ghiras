@@ -6,6 +6,8 @@ import 'logic/quran_audio_controller.dart';
 import 'widgets/quran_page_widget.dart';
 import '../../core/constants/app_colors.dart';
 import '../../shared/widgets/glass_container.dart';
+import '../../core/services/sleep_timer_service.dart';
+import '../../shared/widgets/sleep_timer_dialog.dart';
 
 class MushafScreen extends StatefulWidget {
   final int initialPage;
@@ -148,7 +150,7 @@ class _MushafScreenState extends State<MushafScreen> {
             fit: BoxFit.cover,
           ),
           Container(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withOpacity(0.2),
           ),
           const Center(
             child: Column(
@@ -187,6 +189,8 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   Widget _buildAudioPlayer(QuranAudioController audio) {
+    final timerService = Get.find<SleepTimerService>();
+
     return GlassContainer(
       opacity: 0.8,
       blur: 20,
@@ -215,10 +219,24 @@ class _MushafScreenState extends State<MushafScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'آية ${audio.currentAyah.value}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'آية ${audio.currentAyah.value}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      if (timerService.isActive)
+                        Text(
+                          timerService.formattedRemainingTime,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   LinearProgressIndicator(
@@ -229,6 +247,14 @@ class _MushafScreenState extends State<MushafScreen> {
                   ),
                 ],
               ),
+            ),
+            IconButton(
+              icon: Icon(
+                timerService.isActive ? Icons.timer_rounded : Icons.timer_outlined,
+                size: 20,
+                color: timerService.isActive ? AppColors.primary : Colors.grey,
+              ),
+              onPressed: () => SleepTimerDialog.show(context),
             ),
             IconButton(
               icon: const Icon(Icons.close_rounded,

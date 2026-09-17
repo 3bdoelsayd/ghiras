@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:just_audio/just_audio.dart';
@@ -20,6 +21,7 @@ import 'features/quran/logic/player_bar_bloc/player_bar_bloc.dart';
 import 'features/quran/logic/player_bloc/player_bloc_bloc.dart';
 import 'features/quran/logic/quran_page_player/quran_page_player_bloc.dart';
 import 'features/quran/logic/quran_download_controller.dart';
+import 'core/services/sleep_timer_service.dart';
 
 import 'features/quran/data/quran_database_service.dart';
 
@@ -33,66 +35,54 @@ void main() async {
   // 1. ضمان استقرار المحرك
   WidgetsFlutterBinding.ensureInitialized();
 
+  // تفعيل ميزة العرض حتى حافة الشاشة (Edge-to-Edge) برمجياً
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.transparent,
+  ));
+
+  // تهيئة تنسيق التاريخ للغة العربية لمنع أخطاء الـ intl
+  await initializeDateFormatting('ar', null);
+
   // 2. تهيئة Hive
   await Hive.initFlutter();
   await Hive.openBox('settings');
   await initHiveValues();
 
-  // 3. تهيئة سريعة للـ Blocs
+  // 3. تهيئة سريعة للـ Blocs وتسجيل الخدمات الأساسية فوراً
   playerbarBloc = PlayerBarBloc();
   playerPageBloc = PlayerBlocBloc();
   quranPagePlayerBloc = QuranPagePlayerBloc();
   Bloc.observer = SimpleBlocObserver();
 
-  // 4. تشغيل التطبيق فوراً لفتح الـ Splash الخاصة بك
-  runApp(const GhirasApp());
-
-  // 5. تنفيذ العمليات الثقيلة في الخلفية
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    _initServicesBackground();
-  });
-}
-
-Future<void> _initServicesBackground() async {
-  // تهيئة التاريخ
-  initializeDateFormatting('ar', null);
-
-  // تهيئة قاعدة البيانات
-  QuranDatabaseService.init();
-
-  // تهيئة الصوت (ثقيلة)
-  try {
-    await JustAudioBackground.init(
-      androidNotificationChannelId: 'com.ghiras.app.audio',
-      androidNotificationChannelName: 'Ghiras Audio Service',
-      androidNotificationOngoing: true,
-      androidNotificationIcon: 'mipmap/launcher_icon',
-    );
-
-    final session = await AudioSession.instance;
-    await session.configure(const AudioSessionConfiguration.music());
-  } catch (e) {
-    debugPrint("Background Audio Init Error: $e");
-  }
-
   // تسجيل الخدمات
+  final notificationService = Get.put(NotificationService(), permanent: true);
+  
+  // ننتظر تهيئة الإشعارات والمنطقة الزمنية
+  await notificationService.init();
+
+  if (!Get.isRegistered<PrayerService>()) {
+    Get.put(PrayerService(), permanent: true);
+  }
   if (!Get.isRegistered<AudioPlayer>()) {
     Get.put(AudioPlayer(), permanent: true);
   }
+
   if (!Get.isRegistered<MushafController>()) {
     Get.put(MushafController(), permanent: true);
-  }
-  if (!Get.isRegistered<NotificationService>()) {
-    Get.put(NotificationService(), permanent: true);
-  }
-  if (!Get.isRegistered<PrayerService>()) {
-    Get.put(PrayerService(), permanent: true);
   }
   if (!Get.isRegistered<QuranDownloadController>()) {
     Get.put(QuranDownloadController(), permanent: true);
   }
-
+  if (!Get.isRegistered<SleepTimerService>()) {
+    Get.put(SleepTimerService(), permanent: true);
+  }
+  
   PageSurahMap.getFullMap();
+
+  // 4. تشغيل التطبيق (كان مفقوداً في التعديل السابق)
+  runApp(const GhirasApp());
 }
 
 class GhirasApp extends StatelessWidget {

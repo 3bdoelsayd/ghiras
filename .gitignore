@@ -52,3 +52,10 @@ Runner.xcworkspace/xcuserdata/
 # Ghiras Specific Cache
 **/quran_pages_cache/
 **/khatmah_box/
+
+# Local Gradle cache dirs (custom names, not covered by .gradle/)
+.gradle_fresh/
+.gradle_home/
+
+# Generated data file
+radios_all.json

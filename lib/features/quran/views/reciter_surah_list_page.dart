@@ -204,7 +204,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [Colors.black.withValues(alpha: 0.3), _kDarkGreen],
+                          colors: [Colors.black.withOpacity(0.3), _kDarkGreen],
                         ),
                       ),
                     ),
@@ -278,9 +278,9 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
             Container(
               height: 38.h,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(11.r),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                border: Border.all(color: Colors.white.withOpacity(0.15)),
               ),
               child: TextField(
                 controller: _searchCtrl,
@@ -318,9 +318,9 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 8.h),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
+          border: Border.all(color: Colors.white.withOpacity(0.13)),
         ),
         child: Column(
           children: [
@@ -355,7 +355,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
         duration: const Duration(milliseconds: 180),
         padding: EdgeInsets.symmetric(horizontal: 13.w, vertical: 5.h),
         decoration: BoxDecoration(
-          color: active ? _kLightGreen : Colors.white.withValues(alpha: 0.1),
+          color: active ? _kLightGreen : Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8.r),
         ),
         child: Text(label,
@@ -375,9 +375,9 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
       child: Container(
         width: 34.w, height: 34.h,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
+          color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(9.r),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+          border: Border.all(color: Colors.white.withOpacity(0.15)),
         ),
         child: Icon(icon, color: Colors.white, size: 16.sp),
       ),

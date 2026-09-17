@@ -110,13 +110,13 @@ class _AthkarDetailsScreenState extends State<AthkarDetailsScreen> {
                               borderRadius: BorderRadius.circular(35),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
+                                  color: Colors.black.withOpacity(0.05),
                                   blurRadius: 20,
                                   offset: const Offset(0, 10),
                                 )
                               ],
                             ),
-                            child: Text(
+                            child: SelectableText(
                               item.text,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
@@ -141,7 +141,7 @@ class _AthkarDetailsScreenState extends State<AthkarDetailsScreen> {
                                   child: CircularProgressIndicator(
                                     value: currentCount / totalCount,
                                     strokeWidth: 10,
-                                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                    backgroundColor: AppColors.primary.withOpacity(0.1),
                                     valueColor: AlwaysStoppedAnimation<Color>(isDone ? Colors.green : AppColors.primary),
                                   ),
                                 ),
@@ -153,7 +153,7 @@ class _AthkarDetailsScreenState extends State<AthkarDetailsScreen> {
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: (isDone ? Colors.green : AppColors.primary).withValues(alpha: 0.3),
+                                        color: (isDone ? Colors.green : AppColors.primary).withOpacity(0.3),
                                         blurRadius: 15,
                                         offset: const Offset(0, 5),
                                       )
@@ -179,7 +179,7 @@ class _AthkarDetailsScreenState extends State<AthkarDetailsScreen> {
                           Text(
                             isDone ? 'تم بحمد الله' : 'اضغط على الدائرة للعدّ',
                             style: TextStyle(
-                              color: isDone ? Colors.green : AppColors.textGrey.withValues(alpha: 0.6),
+                              color: isDone ? Colors.green : AppColors.textGrey.withOpacity(0.6),
                               fontFamily: 'Cairo',
                               fontWeight: FontWeight.bold,
                             ),
@@ -198,11 +198,11 @@ class _AthkarDetailsScreenState extends State<AthkarDetailsScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.swipe_left_rounded, color: AppColors.textGrey.withValues(alpha: 0.3), size: 20),
+                Icon(Icons.swipe_left_rounded, color: AppColors.textGrey.withOpacity(0.3), size: 20),
                 const SizedBox(width: 8),
-                Text('اسحب للتنقل بين الأذكار', style: TextStyle(color: AppColors.textGrey.withValues(alpha: 0.3), fontSize: 12, fontFamily: 'Cairo')),
+                Text('اسحب للتنقل بين الأذكار', style: TextStyle(color: AppColors.textGrey.withOpacity(0.3), fontSize: 12, fontFamily: 'Cairo')),
                 const SizedBox(width: 8),
-                Icon(Icons.swipe_right_rounded, color: AppColors.textGrey.withValues(alpha: 0.3), size: 20),
+                Icon(Icons.swipe_right_rounded, color: AppColors.textGrey.withOpacity(0.3), size: 20),
               ],
             ),
           ),

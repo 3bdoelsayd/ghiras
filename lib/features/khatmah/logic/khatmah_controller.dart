@@ -54,25 +54,33 @@ class KhatmahController extends GetxController {
     final index = khatmat.indexWhere((element) => element.id == id);
     if (index != -1) {
       final khatmah = khatmat[index];
-      int pagesToAdd = khatmah.pagesPerDay;
-      int startPage = (khatmah.lastReadPage > 0 ? khatmah.lastReadPage + 1 : 1);
+      
+      // جلب صفحة الهدف بناءً على منطق الحساب الموحد
+      int currentTarget = khatmah.targetPageForToday;
+
+      // ✅ إذا كان المستخدم قد أتم بالفعل هذا الورد أو تخطاه، فلا نزيد ورداً إضافياً.
+      // هذا يمنع "قفزة" الورد للجزء التالي عند الضغط على الزرار وهو مخلص
+      if (khatmah.isEndOfPortion(khatmah.lastReadPage)) {
+        return;
+      }
+
+      int startPage = (khatmah.lastReadPage > 0 ? khatmah.lastReadPage + 1 : khatmah.initialPage);
       
       List<int> newlyRead = [];
-      for (int i = 0; i < pagesToAdd; i++) {
-        int currentPage = (startPage + i).clamp(1, 604);
-        if (!khatmah.readPages.contains(currentPage)) {
-          khatmah.readPages.add(currentPage);
-          newlyRead.add(currentPage);
+      for (int i = startPage; i <= currentTarget; i++) {
+        if (!khatmah.readPages.contains(i)) {
+          khatmah.readPages.add(i);
+          newlyRead.add(i);
         }
       }
       
-      // حفظ آخر مجموعة تمت إضافتها للتراجع عنها
-      _lastAddedPages[id] = newlyRead;
-      _lastPageBeforeFinish[id] = khatmah.lastReadPage;
-
-      khatmah.lastReadPage = (startPage + pagesToAdd - 1).clamp(1, 604);
-      khatmat.refresh();
-      _saveToHive();
+      if (newlyRead.isNotEmpty) {
+        _lastAddedPages[id] = newlyRead;
+        _lastPageBeforeFinish[id] = khatmah.lastReadPage;
+        khatmah.lastReadPage = currentTarget;
+        khatmat.refresh();
+        _saveToHive();
+      }
     }
   }
 

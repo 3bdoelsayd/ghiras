@@ -100,7 +100,7 @@ class _PlayerBarState extends State<PlayerBar> {
                                                 color: AppColors.primary,
                                                 boxShadow: [
                                                   BoxShadow(
-                                                    color: Colors.black.withValues(alpha: 0.2),
+                                                    color: Colors.black.withOpacity(0.2),
                                                     blurRadius: 10,
                                                   )
                                                 ],
@@ -310,7 +310,7 @@ class _PlayerBarState extends State<PlayerBar> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           boxShadow: [
-                            BoxShadow(color: AppColors.primary.withValues(alpha: 0.2), blurRadius: 30, spreadRadius: 5)
+                            BoxShadow(color: AppColors.primary.withOpacity(0.2), blurRadius: 30, spreadRadius: 5)
                           ],
                         ),
                         child: const CircleAvatar(
@@ -348,7 +348,7 @@ class _PlayerBarState extends State<PlayerBar> {
                 value: position.inSeconds.toDouble(),
                 max: total.inSeconds.toDouble() > 0 ? total.inSeconds.toDouble() : 1.0,
                 activeColor: AppColors.primary,
-                inactiveColor: AppColors.primary.withValues(alpha: 0.2),
+                inactiveColor: AppColors.primary.withOpacity(0.2),
                 onChanged: (value) {
                   state.audioPlayer.seek(Duration(seconds: value.toInt()));
                 },

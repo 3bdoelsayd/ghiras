@@ -55,7 +55,7 @@ class LessonCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: visual.color.withValues(alpha: 0.08),
+            color: visual.color.withOpacity(0.08),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -74,7 +74,7 @@ class LessonCard extends StatelessWidget {
                 child: Icon(
                   visual.icon,
                   size: 100,
-                  color: visual.color.withValues(alpha: 0.03),
+                  color: visual.color.withOpacity(0.03),
                 ),
               ),
               Padding(
@@ -100,7 +100,7 @@ class LessonCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.1),
+                              color: Colors.green.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Row(
@@ -220,12 +220,12 @@ class _AnswerOptionCardState extends State<AnswerOptionCard>
   Color _bgColor() {
     if (!widget.showResult || !widget.isSelected) {
       return widget.isSelected
-          ? Colors.blue.withValues(alpha: 0.08)
-          : Colors.grey.withValues(alpha: 0.06);
+          ? Colors.blue.withOpacity(0.08)
+          : Colors.grey.withOpacity(0.06);
     }
     return widget.isCorrectAnswer == true
-        ? Colors.green.withValues(alpha: 0.15)
-        : Colors.red.withValues(alpha: 0.12);
+        ? Colors.green.withOpacity(0.15)
+        : Colors.red.withOpacity(0.12);
   }
 
   Color _borderColor() {
@@ -315,11 +315,11 @@ class ExplanationBox extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: (isCorrect ? Colors.green : Colors.orange)
-                    .withValues(alpha: 0.08),
+                    .withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: (isCorrect ? Colors.green : Colors.orange)
-                      .withValues(alpha: 0.4),
+                      .withOpacity(0.4),
                 ),
               ),
               child: Row(
@@ -403,7 +403,7 @@ class _LessonCompletionViewState extends State<LessonCompletionView>
                 width: 96,
                 height: 96,
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.12),
+                  color: Colors.green.withOpacity(0.12),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.emoji_events,
@@ -464,7 +464,7 @@ class StepProgressHeader extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 3),
             height: 5,
             decoration: BoxDecoration(
-              color: active ? color : Colors.grey.withValues(alpha: 0.2),
+              color: active ? color : Colors.grey.withOpacity(0.2),
               borderRadius: BorderRadius.circular(4),
             ),
           ),

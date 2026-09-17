@@ -29,7 +29,7 @@ class _SurahListSheetState extends State<SurahListSheet> {
             width: 50,
             height: 5,
             decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.3),
+              color: Colors.grey.withOpacity(0.3),
               borderRadius: BorderRadius.circular(10),
             ),
           ),
@@ -71,7 +71,7 @@ class _SurahListSheetState extends State<SurahListSheet> {
                     Navigator.pop(context);
                   },
                   leading: CircleAvatar(
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    backgroundColor: AppColors.primary.withOpacity(0.1),
                     child: Text(sNum.toString(), style: const TextStyle(color: AppColors.primary, fontSize: 12)),
                   ),
                   title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),

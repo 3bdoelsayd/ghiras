@@ -1,32 +1,52 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+// معالج خارجي للضغط على الإشعارات في الخلفية (مطلوب لبعض الأنظمة)
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse details) {
+  debugPrint("Background notification tapped: ${details.id}");
+}
+
 class NotificationService extends GetxService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
   final _settingsBox = Hive.box('settings');
+  final _initCompleter = Completer<void>();
 
   @override
   void onInit() {
     super.onInit();
+    // نبدأ التهيئة ولكن لا ننتظرها هنا لأن GetX لا يدعم await في onInit
     _initNotifications();
   }
 
+  Future<void> init() async {
+    return _initCompleter.future;
+  }
+
   Future<void> _initNotifications() async {
-    tz_data.initializeTimeZones();
-    
+    if (_initCompleter.isCompleted) return;
+
     try {
-      tz.setLocalLocation(tz.getLocation('Africa/Cairo'));
+      tz_data.initializeTimeZones();
+      
+      final String timeZoneName = await FlutterTimezone.getLocalTimezone().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => 'Africa/Cairo',
+      );
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
     } catch (e) {
       debugPrint("Could not set local timezone: $e");
+      try {
+        tz.setLocalLocation(tz.getLocation('Africa/Cairo'));
+      } catch (_) {}
     }
-    
-    // طلب كافة الصلاحيات الضرورية لضمان عمل الأذان
-    await _requestFullPermissions();
 
     const AndroidNotificationChannel dailyChannel = AndroidNotificationChannel(
       'daily_reminders', 
@@ -37,13 +57,14 @@ class NotificationService extends GetxService {
     );
 
     const AndroidNotificationChannel prayerChannel = AndroidNotificationChannel(
-      'prayer_v2',
+      'prayer_v8', // النسخة الثامنة لضمان العمل كإشعار عادي
       'الأذان وتنبيهات الصلاة',
       description: 'إشعارات مواقيت الصلاة مع صوت الأذان كامل',
       importance: Importance.max,
       playSound: true,
       sound: RawResourceAndroidNotificationSound('azan'),
       enableVibration: true,
+      audioAttributesUsage: AudioAttributesUsage.notification,
     );
 
     final androidImplementation = _notificationsPlugin
@@ -61,27 +82,70 @@ class NotificationService extends GetxService {
 
     await _notificationsPlugin.initialize(
       initializationSettings,
-      onDidReceiveNotificationResponse: (details) {
-        // يمكن هنا إضافة منطق عند الضغط على الإشعار
-      },
+      onDidReceiveNotificationResponse: (details) {},
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
 
+    // 2. طلب الصلاحيات بعد التهيئة لضمان استقرار المحرك
+    await requestFullPermissions();
+    
+    // 3. التحقق من تحسين البطارية (هام جداً لنسخة المتجر)
+    await checkBatteryOptimization();
+
+    _initCompleter.complete();
     updateScheduledNotifications();
   }
 
-  Future<void> _requestFullPermissions() async {
+  Future<void> checkBatteryOptimization() async {
+    if (await Permission.ignoreBatteryOptimizations.isDenied) {
+      Get.defaultDialog(
+        title: "تنبيه هام للأذان",
+        middleText: "لضمان عمل الأذان في الخلفية، يرجى استثناء التطبيق من 'تحسين البطارية'.",
+        textConfirm: "تفعيل الآن",
+        textCancel: "لاحقاً",
+        confirmTextColor: Colors.white,
+        onConfirm: () async {
+          Get.back();
+          await Permission.ignoreBatteryOptimizations.request();
+        },
+      );
+    }
+  }
+
+  Future<void> requestFullPermissions() async {
     // 1. صلاحية الإشعارات (لأندرويد 13+)
-    if (await Permission.notification.isDenied) {
-      await Permission.notification.request();
+    PermissionStatus status = await Permission.notification.status;
+    if (!status.isGranted) {
+      status = await Permission.notification.request();
     }
 
     // 2. صلاحية التنبيهات الدقيقة (لأندرويد 12+)
+    if (await Permission.scheduleExactAlarm.isDenied) {
+      await Permission.scheduleExactAlarm.request();
+    }
+    
     final androidPlugin = _notificationsPlugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     
-    await androidPlugin?.requestExactAlarmsPermission();
+    if (androidPlugin != null) {
+      final bool? hasPermission = await androidPlugin.canScheduleExactNotifications();
+      if (hasPermission == false) {
+        // تنبيه المستخدم بضرورة تفعيل المنبهات الدقيقة
+        Get.defaultDialog(
+          title: "تنبيه هام",
+          middleText: "لكي يعمل الأذان في وقته بدقة، يرجى تفعيل خيار 'المنبهات والتذكيرات' للتطبيق من الإعدادات.",
+          textConfirm: "ذهاب للإعدادات",
+          textCancel: "لاحقاً",
+          confirmTextColor: Colors.white,
+          onConfirm: () async {
+            Get.back();
+            await openAppSettings();
+          },
+        );
+      }
+    }
 
-    // 3. تجاهل تحسين البطارية (هام جداً للأذان)
+    // 3. تجاهل تحسين البطارية
     if (await Permission.ignoreBatteryOptimizations.isDenied) {
       await Permission.ignoreBatteryOptimizations.request();
     }
@@ -245,33 +309,45 @@ class NotificationService extends GetxService {
     required DateTime scheduledDate,
     String? sound,
   }) async {
-    await _notificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      NotificationDetails(
-        android: const AndroidNotificationDetails(
-          'prayer_v2',
-          'الأذان وتنبيهات الصلاة',
-          importance: Importance.max,
-          priority: Priority.max,
-          playSound: true,
-          sound: RawResourceAndroidNotificationSound('azan'),
-          showWhen: true,
-          category: AndroidNotificationCategory.reminder,
+    try {
+      // التأكد من أن التاريخ في المستقبل
+      if (scheduledDate.isBefore(DateTime.now())) return;
+
+      final tzDate = tz.TZDateTime.from(scheduledDate, tz.local);
+
+      await _notificationsPlugin.zonedSchedule(
+        id,
+        title,
+        body,
+        tzDate,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'prayer_v8',
+            'الأذان وتنبيهات الصلاة',
+            channelDescription: 'إشعارات مواقيت الصلاة مع صوت الأذان كامل',
+            importance: Importance.max,
+            priority: Priority.max,
+            playSound: true,
+            sound: RawResourceAndroidNotificationSound('azan'),
+            showWhen: true,
+            category: AndroidNotificationCategory.event, // تم التغيير لـ event كونه إشعار عادي
+            styleInformation: BigTextStyleInformation(body),
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+            sound: sound != null ? '$sound.caf' : null,
+          ),
         ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-          sound: sound != null ? '$sound.caf' : null,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      debugPrint("Successfully scheduled notification $id for $tzDate");
+    } catch (e) {
+      debugPrint("Notification Scheduling Error for ID $id: $e");
+    }
   }
 
   Future<void> showDownloadNotification({

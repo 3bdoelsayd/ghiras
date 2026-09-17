@@ -94,7 +94,7 @@ class _TafseerSheetState extends State<TafseerSheet> {
                 Container(
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.05),
+                    color: AppColors.primary.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Text(

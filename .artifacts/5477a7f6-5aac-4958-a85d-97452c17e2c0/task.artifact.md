@@ -1,5 +1,5 @@
-- [ ] Upgrade Android Gradle Plugin in `settings.gradle.kts`
-- [ ] Upgrade Kotlin Gradle Plugin in `settings.gradle.kts`
-- [ ] Upgrade Gradle version in `gradle-wrapper.properties`
-- [ ] Verify build with `flutter build apk --debug`
-- [ ] Verify app launch on emulator
+- [x] Update `PrayerService` to fetch detailed address information
+- [x] Display detailed location in `HomeScreen` greeting section
+- [x] Add refresh location button to `HomeScreen`
+- [x] Enhance location display in `HomeScreen` prayer card
+- [x] Verify changes

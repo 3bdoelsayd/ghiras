@@ -136,7 +136,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                                     child: Container(
                                       margin: const EdgeInsets.only(top: 15),
                                       width: 2, height: 8,
-                                      color: Colors.grey.withValues(alpha: 0.2),
+                                      color: Colors.grey.withOpacity(0.2),
                                     ),
                                   ),
                                 )),

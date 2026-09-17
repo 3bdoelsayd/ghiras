@@ -123,8 +123,8 @@ class _GhirasScreenState extends State<GhirasScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.accent.withValues(alpha: 0.2),
-                    AppColors.accent.withValues(alpha: 0.0),
+                    AppColors.accent.withOpacity(0.2),
+                    AppColors.accent.withOpacity(0.0),
                   ],
                 ),
               ),
@@ -229,7 +229,7 @@ class _GhirasScreenState extends State<GhirasScreen> {
               width: 120,
               height: 6,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
@@ -298,7 +298,7 @@ class _GhirasScreenState extends State<GhirasScreen> {
 
   Widget _buildProgressCircle() {
     const double circleSize = 160.0;
-    final Color progressColor = AppColors.primary.withValues(alpha: 0.1);
+    final Color progressColor = AppColors.primary.withOpacity(0.1);
     
     switch (_treeStage) {
       case 1:
@@ -350,7 +350,7 @@ class _GhirasScreenState extends State<GhirasScreen> {
     return Positioned(
       bottom: 180 + (index * 8.0),
       left: 80 + (index % 4 * 40.0),
-      child: Icon(Icons.auto_awesome, color: Colors.amber.withValues(alpha: 0.8), size: 12 + (index % 3 * 4.0)),
+      child: Icon(Icons.auto_awesome, color: Colors.amber.withOpacity(0.8), size: 12 + (index % 3 * 4.0)),
     );
   }
 
@@ -361,7 +361,7 @@ class _GhirasScreenState extends State<GhirasScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 25),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.9),
+          color: Colors.white.withOpacity(0.9),
           borderRadius: BorderRadius.circular(35),
           image: const DecorationImage(
             image: AssetImage('assets/images/tasbeehbackground.png'),
@@ -370,12 +370,12 @@ class _GhirasScreenState extends State<GhirasScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.15),
+              color: AppColors.primary.withOpacity(0.15),
               blurRadius: 30,
               offset: const Offset(0, 15),
             )
           ],
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1), width: 2),
+          border: Border.all(color: AppColors.primary.withOpacity(0.1), width: 2),
         ),
         child: Column(
           children: [
@@ -393,7 +393,7 @@ class _GhirasScreenState extends State<GhirasScreen> {
               _getCurrentStep(),
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.textGrey.withValues(alpha: 0.8),
+                color: AppColors.textGrey.withOpacity(0.8),
                 fontFamily: 'Cairo',
                 fontWeight: FontWeight.bold,
               ),
@@ -408,7 +408,7 @@ class _GhirasScreenState extends State<GhirasScreen> {
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
+                    color: AppColors.primary.withOpacity(0.3),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   )

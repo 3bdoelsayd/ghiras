@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -52,26 +53,30 @@ class QuranDatabaseService {
 
     final dbPath = await getDatabasesPath();
 
-    // نسخ qpc-v2.db
-    final wordsPath = join(dbPath, 'qpc-v2.db');
-    if (!await File(wordsPath).exists()) {
-      final data = await rootBundle.load('assets/db/qpc-v2.db');
-      await File(wordsPath).writeAsBytes(
-        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
-      );
-    }
+    try {
+      // نسخ qpc-v2.db
+      final wordsPath = join(dbPath, 'qpc-v2.db');
+      if (!await File(wordsPath).exists()) {
+        final data = await rootBundle.load('assets/db/qpc-v2.db');
+        final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+        await File(wordsPath).writeAsBytes(bytes, flush: true);
+      }
 
-    // نسخ qpc-v2-15-lines.db
-    final pagesPath = join(dbPath, 'qpc-v2-15-lines.db');
-    if (!await File(pagesPath).exists()) {
-      final data = await rootBundle.load('assets/db/qpc-v2-15-lines.db');
-      await File(pagesPath).writeAsBytes(
-        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
-      );
-    }
+      // نسخ qpc-v2-15-lines.db
+      final pagesPath = join(dbPath, 'qpc-v2-15-lines.db');
+      if (!await File(pagesPath).exists()) {
+        final data = await rootBundle.load('assets/db/qpc-v2-15-lines.db');
+        final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+        await File(pagesPath).writeAsBytes(bytes, flush: true);
+      }
 
-    _wordsDb = await openDatabase(wordsPath, readOnly: true);
-    _pagesDb = await openDatabase(pagesPath, readOnly: true);
+      _wordsDb = await openDatabase(wordsPath, readOnly: true);
+      _pagesDb = await openDatabase(pagesPath, readOnly: true);
+    } catch (e) {
+      // معالجة الخطأ في حالة فشل النسخ (مثلاً امتلاء المساحة)
+      debugPrint("Error initializing Quran Database: $e");
+      rethrow;
+    }
   }
 
   /// جيب بيانات صفحة كاملة (سطر سطر) - استعلام واحد فقط لكل الكلمات

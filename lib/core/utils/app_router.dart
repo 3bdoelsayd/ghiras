@@ -15,6 +15,7 @@ import '../../features/qibla/qibla_screen.dart';
 import '../../features/prayer/location_picker_screen.dart';
 import '../../features/calendar/calendar_screen.dart';
 import '../../features/quran/views/reciters_page.dart';
+import '../../features/radio/views/radio_screen.dart';
 class AppRouter {
   static const String splash = '/splash';
   static const String home = '/';
@@ -25,6 +26,7 @@ class AppRouter {
   static const String quranHome = '/quran';
   static const String mushaf = '/mushaf';
   static const String reciters = '/reciters';
+  static const String radio = '/radio';
   static const String khatmah = '/khatmah';
   static const String tasbeeh = '/tasbeeh';
   static const String settings = '/settings';
@@ -93,6 +95,10 @@ class AppRouter {
       GoRoute(
         path: reciters,
         builder: (context, state) => const RecitersPage(),
+      ),
+      GoRoute(
+        path: radio,
+        builder: (context, state) => const RadioScreen(),
       ),
       GoRoute(
         path: khatmah,

@@ -71,7 +71,7 @@ class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
             album: "غراس الجنة",
             artist: event.reciter.name,
             title: "سورة ${quran.getSurahNameArabic(int.parse(e["suraNumber"]))}",
-            artUri: Uri.parse("https://ghiras.app/logo.png"),
+            artUri: Uri.parse("asset:///assets/images/logo.png"), // استخدام أيقونة محلية لتقليل استهلاك الذاكرة
           );
 
           if (e["isLocal"]) {

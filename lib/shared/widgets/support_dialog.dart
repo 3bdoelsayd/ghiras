@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart'; // سأتحقق من وجود المكتبة أو استخدم بديل
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 
@@ -31,7 +30,7 @@ class SupportDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.1),
+              color: Colors.green.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Row(
@@ -49,7 +48,7 @@ class SupportDialog extends StatelessWidget {
           ),
           const SizedBox(height: 15),
           const Text(
-            "غِراس تطبيق صدقة جارية، دعمك لنا بالتقييم أو المساهمة يساعدنا على الاستمرار وتطويره.",
+            "غِراس تطبيق صدقة جارية، دعمك لنا بالتقييم أو المساهمة يساعدنا على الاستمرار في تطويره.",
             textAlign: TextAlign.center,
             style: TextStyle(fontFamily: 'Cairo', fontSize: 13),
           ),
@@ -61,8 +60,11 @@ class SupportDialog extends StatelessWidget {
             title: "تقييم التطبيق",
             subtitle: "قيمنا بـ 5 نجوم على المتجر",
             color: Colors.amber,
-            onTap: () {
-              // فتح لينك المتجر
+            onTap: () async {
+              final Uri url = Uri.parse(AppStrings.appStoreLink);
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
             },
           ),
           const SizedBox(height: 12),
@@ -103,7 +105,7 @@ class SupportDialog extends StatelessWidget {
           "تم النسخ",
           "تم نسخ رقم $title",
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.withValues(alpha: 0.8),
+          backgroundColor: Colors.green.withOpacity(0.8),
           colorText: Colors.white,
           margin: const EdgeInsets.all(15),
         );
@@ -112,7 +114,7 @@ class SupportDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(

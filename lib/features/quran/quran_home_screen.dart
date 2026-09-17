@@ -89,7 +89,7 @@ class _QuranHomeScreenState extends State<QuranHomeScreen>
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [Colors.black.withValues(alpha: 0.3), AppColors.primary],
+                          colors: [Colors.black.withOpacity(0.3), AppColors.primary],
                         ),
                       ),
                     ),
@@ -144,7 +144,7 @@ class _QuranHomeScreenState extends State<QuranHomeScreen>
       padding: const EdgeInsets.all(15),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey.withValues(alpha: 0.1),
+          color: Colors.grey.withOpacity(0.1),
           borderRadius: BorderRadius.circular(15),
         ),
         child: TextField(
@@ -226,7 +226,7 @@ class _SurahTab extends StatelessWidget {
                 height: 45,
                 width: 45,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
+                  color: AppColors.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -266,9 +266,9 @@ class _SurahTab extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: const Color(0xFFF39C12).withValues(alpha: 0.1),
+          color: const Color(0xFFF39C12).withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFF39C12).withValues(alpha: 0.3)),
+          border: Border.all(color: const Color(0xFFF39C12).withOpacity(0.3)),
         ),
         child: Column(
           children: [
@@ -355,7 +355,7 @@ class _SurahTab extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: ListTile(
         onTap: () => onNavigate(page),
-        tileColor: AppColors.primary.withValues(alpha: 0.05),
+        tileColor: AppColors.primary.withOpacity(0.05),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         leading: const Icon(Icons.find_in_page_rounded, color: AppColors.primary),
         title: Text('الانتقال إلى صفحة $page', style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'cairo')),
@@ -398,7 +398,7 @@ class _JuzTab extends StatelessWidget {
             height: 40,
             width: 40,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -462,7 +462,7 @@ class _HizbTab extends StatelessWidget {
             height: 40,
             width: 40,
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -503,7 +503,7 @@ class _FawasilTab extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.bookmark_border_rounded, size: 80, color: AppColors.primary.withValues(alpha: 0.1)),
+          Icon(Icons.bookmark_border_rounded, size: 80, color: AppColors.primary.withOpacity(0.1)),
           const SizedBox(height: 15),
           const Text('لا توجد فواصل مضافة', style: TextStyle(fontFamily: 'cairo', color: AppColors.textGrey)),
           const Text('أضف فاصلاً من داخل المصحف للرجوع إليه لاحقاً', style: TextStyle(fontFamily: 'cairo', fontSize: 12, color: Colors.grey)),
@@ -516,11 +516,10 @@ class _FawasilTab extends StatelessWidget {
       separatorBuilder: (context, index) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final fasil = controller.fawasil[index];
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(15),
-          ),
+        return Material(
+          color: AppColors.primary.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(15),
+          clipBehavior: Clip.antiAlias,
           child: ListTile(
             onTap: () => onNavigate(fasil['page']),
             leading: const Icon(Icons.bookmark_rounded, color: AppColors.primary),

@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/helpers/hive_helper.dart';
 import '../../../core/models/reciter.dart';
 import '../../../core/models/moshaf.dart';
+import '../../../core/utils/app_router.dart';
 import '../logic/player_bloc/player_bloc_bloc.dart';
 import 'package:ghiras/main.dart';
 
@@ -343,7 +345,7 @@ class _RecitersPageState extends State<RecitersPage> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Colors.black.withValues(alpha: 0.3), _kDarkGreen],
+              colors: [Colors.black.withOpacity(0.3), _kDarkGreen],
             ),
           ),
         ),
@@ -384,9 +386,9 @@ class _RecitersPageState extends State<RecitersPage> {
                 child: Container(
                   height: 40.h,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.13),
+                    color: Colors.white.withOpacity(0.13),
                     borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                    border: Border.all(color: Colors.white.withOpacity(0.18)),
                   ),
                   child: TextField(
                     controller: textEditingController,
@@ -428,6 +430,34 @@ class _RecitersPageState extends State<RecitersPage> {
           _buildTab("الكل", "all"),
           SizedBox(width: 8.w),
           _buildTab("المفضلة", "favorite"),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => context.push(AppRouter.radio),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.radio_rounded, color: _kAccentGreen, size: 14.sp),
+                  SizedBox(width: 6.w),
+                  Text(
+                    "الإذاعة",
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -443,7 +473,7 @@ class _RecitersPageState extends State<RecitersPage> {
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
         decoration: BoxDecoration(
-          color: active ? _kLightGreen : Colors.white.withValues(alpha: 0.12),
+          color: active ? _kLightGreen : Colors.white.withOpacity(0.12),
           borderRadius: BorderRadius.circular(8.r),
         ),
         child: Text(label,
@@ -451,7 +481,7 @@ class _RecitersPageState extends State<RecitersPage> {
               fontFamily: 'Cairo',
               fontSize: 10.sp,
               fontWeight: FontWeight.w700,
-              color: active ? _kDarkGreen : Colors.white.withValues(alpha: 0.75),
+              color: active ? _kDarkGreen : Colors.white.withOpacity(0.75),
             )),
       ),
     );
@@ -462,153 +492,188 @@ class _RecitersPageState extends State<RecitersPage> {
       return const Center(child: CircularProgressIndicator(color: _kDarkGreen));
     }
 
-    final list = _displayList;
+    try {
+      final list = _displayList;
 
-    if (list.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 40.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.cloud_off_rounded, size: 64.sp, color: _kTextMuted.withValues(alpha: 0.5)),
-              SizedBox(height: 16.h),
-              Text(
-                "لم نتمكن من تحميل قائمة القراء",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: 'Cairo', color: _kTextPrimary, fontSize: 16.sp, fontWeight: FontWeight.w700),
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                "يرجى التأكد من اتصالك بالإنترنت والمحاولة مرة أخرى",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: 'Cairo', color: _kTextMuted, fontSize: 13.sp),
-              ),
-              SizedBox(height: 24.h),
-              ElevatedButton.icon(
-                onPressed: fetchReciters,
-                icon: Icon(Icons.refresh_rounded, size: 18.sp, color: Colors.white),
-                label: Text("إعادة المحاولة", style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 14.sp, color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _kDarkGreen,
-                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-                ),
-              ),
-            ],
-          ),
-        ),
+      if (list.isEmpty) {
+        return _buildEmptyState();
+      }
+
+      return ListView.builder(
+        padding: EdgeInsets.only(top: 10.h, bottom: 20.h),
+        itemCount: list.length,
+        itemBuilder: (context, index) {
+          try {
+            return _buildReciterCard(list[index]);
+          } catch (e) {
+            debugPrint("Error building reciter card at $index: $e");
+            return const SizedBox.shrink();
+          }
+        },
       );
+    } catch (e) {
+      debugPrint("Error building reciters body: $e");
+      return _buildErrorState();
     }
+  }
 
-    return ListView.builder(
-      padding: EdgeInsets.only(top: 10.h, bottom: 20.h),
-      itemCount: list.length,
-      itemBuilder: (context, index) {
-        return _buildReciterCard(list[index]);
-      },
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 40.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_off_rounded, size: 64.sp, color: _kTextMuted.withOpacity(0.5)),
+            SizedBox(height: 16.h),
+            Text(
+              "لم نتمكن من العثور على نتائج",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontFamily: 'Cairo', color: _kTextPrimary, fontSize: 16.sp, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 40.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_rounded, size: 64.sp, color: _kTextMuted.withOpacity(0.5)),
+            SizedBox(height: 16.h),
+            Text(
+              "حدث خطأ غير متوقع",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontFamily: 'Cairo', color: _kTextPrimary, fontSize: 16.sp, fontWeight: FontWeight.w700),
+            ),
+            SizedBox(height: 24.h),
+            ElevatedButton(
+              onPressed: fetchReciters,
+              style: ElevatedButton.styleFrom(backgroundColor: _kDarkGreen),
+              child: const Text("إعادة المحاولة", style: TextStyle(color: Colors.white, fontFamily: 'Cairo')),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildReciterCard(Reciter reciter) {
-    final bool isFav = favoriteRecitersList.any((r) => r.id == reciter.id);
+    try {
+      final bool isFav = favoriteRecitersList.any((r) => r.id == reciter.id);
 
-    return Container(
-      margin: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: _kCard,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: _kBorder),
-      ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.05,
-              child: Image.asset(
-                'assets/images/zikrback.png',
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          Theme(
-            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-            child: ExpansionTile(
-              tilePadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-              iconColor: _kDarkGreen,
-              collapsedIconColor: _kTextMuted,
-              leading: Container(
-                width: 46.w, height: 46.h,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_kDarkGreen, _kMidGreen],
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                  ),
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  reciter.name.isNotEmpty ? reciter.name[0] : "؟",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w700,
+      return Container(
+        margin: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
+        decoration: BoxDecoration(
+          color: _kCard,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: _kBorder),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16.r),
+          child: Material(
+            color: Colors.transparent, // إصلاح مشكلة ListTile background
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.05,
+                    child: Image.asset(
+                      'assets/images/zikrback.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-              ),
-              title: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                Theme(
+                  data: Theme.of(context).copyWith(
+                    dividerColor: Colors.transparent,
+                    splashColor: _kDarkGreen.withOpacity(0.1),
+                  ),
+                  child: ExpansionTile(
+                    tilePadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                    iconColor: _kDarkGreen,
+                    collapsedIconColor: _kTextMuted,
+                    leading: Container(
+                      width: 46.w, height: 46.h,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [_kDarkGreen, _kMidGreen],
+                          begin: Alignment.topRight,
+                          end: Alignment.bottomLeft,
+                        ),
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        reciter.name.isNotEmpty ? reciter.name[0] : "؟",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    title: Row(
                       children: [
-                        Text(reciter.name,
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w700,
-                              color: _kTextPrimary,
-                            )),
-                        Text(
-                            reciter.moshaf.isNotEmpty
-                                ? "${reciter.moshaf.length} ${reciter.moshaf.length == 1 ? 'رواية' : 'روايات'}"
-                                : "",
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 11.sp,
-                              color: _kTextMuted,
-                            )),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(reciter.name,
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: _kTextPrimary,
+                                  )),
+                              Text(
+                                  reciter.moshaf.isNotEmpty
+                                      ? "${reciter.moshaf.length} ${reciter.moshaf.length == 1 ? 'رواية' : 'روايات'}"
+                                      : "",
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontSize: 11.sp,
+                                    color: _kTextMuted,
+                                  )),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => _toggleFavorite(reciter),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 32.w, height: 32.h,
+                            decoration: BoxDecoration(
+                              color: isFav ? const Color(0xFFFFE4E4) : _kFavBg,
+                              borderRadius: BorderRadius.circular(9.r),
+                              border: Border.all(color: _kFavBorder),
+                            ),
+                            child: Icon(
+                              isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              color: _kFavIcon,
+                              size: 16.sp,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
                       ],
                     ),
+                    children: reciter.moshaf.map((m) => _buildMoshafRow(reciter, m)).toList(),
                   ),
-                  GestureDetector(
-                    onTap: () => _toggleFavorite(reciter),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 32.w, height: 32.h,
-                      decoration: BoxDecoration(
-                        color: isFav ? const Color(0xFFFFE4E4) : _kFavBg,
-                        borderRadius: BorderRadius.circular(9.r),
-                        border: Border.all(color: _kFavBorder),
-                      ),
-                      child: Icon(
-                        isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        color: _kFavIcon,
-                        size: 16.sp,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
-                ],
-              ),
-              children: reciter.moshaf.map((m) => _buildMoshafRow(reciter, m)).toList(),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      );
+    } catch (e) {
+      return const SizedBox.shrink();
+    }
   }
 
   Widget _buildMoshafRow(Reciter reciter, Moshaf moshaf) {

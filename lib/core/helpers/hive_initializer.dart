@@ -32,7 +32,7 @@ Future<void> initHiveValues() async {
   nullValidator("shouldShowZikrNotification2", false);
   nullValidator("shouldShowSallyNotification", false);
   nullValidator("shouldShowhadithNotification", false);
-  nullValidator("shouldUsePrayerTimes", false);
+  nullValidator("shouldUsePrayerTimes", true);
 
   nullValidator("timesForShowinghadithNotifications", 0);
   nullValidator("timesForShowingAyahNotifications", 0);

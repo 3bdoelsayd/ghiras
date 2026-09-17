@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/string_utils.dart';
 import '../../../core/constants/app_strings.dart';
 import '../logic/mushaf_controller.dart';
 import '../data/quran_text.dart';
@@ -96,14 +97,6 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
     await Share.shareXFiles([XFile(imagePath.path)], text: 'تمت المشاركة من تطبيق ${AppStrings.appName}\n${AppStrings.appStoreLink}');
   }
 
-  String _toArabicNumbers(String input) {
-    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    for (int i = 0; i < english.length; i++) {
-      input = input.replaceAll(english[i], arabic[i]);
-    }
-    return input;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -192,7 +185,7 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
                                 ),
                                 if (!_isQCF)
                                   TextSpan(
-                                    text: ' \uFD3F${_toArabicNumbers(ayahNum.toString())}\uFD3E ',
+                                    text: ' \uFD3F${ayahNum.toString().toArabicDigits}\uFD3E ',
                                     style: TextStyle(
                                       fontFamily: 'AmiriQuran',
                                       fontSize: (_fontSize * 0.8).sp,
@@ -215,7 +208,7 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
-                              '${_controller.getTafseer(widget.surahNumber, ayahNum)} (${_toArabicNumbers(ayahNum.toString())})',
+                              '${_controller.getTafseer(widget.surahNumber, ayahNum)} (${ayahNum.toString().toArabicDigits})',
                               textAlign: TextAlign.justify,
                               textDirection: TextDirection.rtl,
                               style: TextStyle(
@@ -249,7 +242,7 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
               color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
               borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
             ),
             child: Column(
@@ -321,7 +314,7 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
                       label: const Text('خط مصحف', style: TextStyle(fontFamily: 'Cairo')),
                       selected: _isQCF,
                       onSelected: (val) => setState(() => _isQCF = val),
-                      selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                      selectedColor: AppColors.primary.withOpacity(0.2),
                     ),
                   ],
                 ),

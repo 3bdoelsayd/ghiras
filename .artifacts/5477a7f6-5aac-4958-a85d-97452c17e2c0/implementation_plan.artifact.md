@@ -1,32 +1,31 @@
-# Implementation Plan - Upgrade Build Tools
+# Implementation Plan - Display Detailed Current Location
 
-The build failed because the project's Android Gradle Plugin (AGP) version (8.3.2) is lower than the minimum version supported by the current Flutter version (8.6.0). Additionally, a warning suggests upgrading Gradle to at least 8.14.0.
+The user wants to display their exact current location name (address) prominently in the app. Currently, the app fetches a basic address and displays it in a small tag within the prayer card.
 
 ## Proposed Changes
 
-### Build Configuration
+### Core Services
 
-#### [MODIFY] [settings.gradle.kts](file:///home/sigma/StudioProjects/ghiras/android/settings.gradle.kts)
-- Upgrade `com.android.application` plugin version from `8.3.2` to `8.6.0`.
-- Upgrade `org.jetbrains.kotlin.android` plugin version from `1.9.24` to `1.9.25` (recommended for AGP 8.6).
+#### [MODIFY] [prayer_service.dart](file:///home/sigma/StudioProjects/ghiras/lib/core/services/prayer_service.dart)
+- Enhance the address building logic in `updateSettings()` to include more details from the `Placemark` object (e.g., `name`, `subLocality`, `locality`).
+- Ensure the address is localized to Arabic.
+- Add logic to handle cases where some fields might be empty or redundant.
 
-#### [MODIFY] [gradle-wrapper.properties](file:///home/sigma/StudioProjects/ghiras/android/gradle/wrapper/gradle-wrapper.properties)
-- Upgrade `distributionUrl` to use Gradle `8.12` or `8.13` (checking latest supported).
-  > [!NOTE]
-  > The Flutter warning explicitly mentioned `8.14.0`. I will use `https://services.gradle.org/distributions/gradle-8.12-all.zip` if `8.14` is not yet available, but the warning said it will be dropped "soon", so I'll try to reach the recommended version if possible.
-  > Actually, looking at the AGP compatibility table, AGP 8.6 only needs Gradle 8.7+. Gradle 8.12 is already higher than 8.7.
-  > I will upgrade to Gradle 8.12 (already there) or higher as suggested.
+### Home Feature
 
-### Potential Cleanup
-
-#### [MODIFY] [gradle.properties](file:///home/sigma/StudioProjects/ghiras/android/gradle.properties)
-- Ensure `android.newDsl=false` is maintained to avoid AGP 9+ preview warnings if they persist, or remove it if not needed.
+#### [MODIFY] [home_screen.dart](file:///home/sigma/StudioProjects/ghiras/lib/features/home/home_screen.dart)
+- Update the UI to display the location name more prominently.
+- Add the location name to the greeting section at the top of the screen for better visibility.
+- Increase the font size of the location name in the prayer card.
+- Add a refresh icon/button next to the location name to allow the user to manually trigger a location update.
 
 ## Verification Plan
 
 ### Automated Tests
-- Run `flutter build apk --debug` to verify the build process completes.
-- Run `gradlew help` in the `android` directory.
+- No specific automated tests required for this UI enhancement, but I will verify the code compiles without errors.
 
 ### Manual Verification
-- Verify the app launches on the emulator.
+- Run the app on an emulator/device.
+- Verify that the location name appears at the top of the screen and in the prayer card.
+- Test the refresh button to ensure it updates the location name correctly.
+- Verify that the address is detailed (e.g., "Street Name, Neighborhood, City").

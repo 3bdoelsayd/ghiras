@@ -94,8 +94,14 @@ class _AthkarScreenState extends State<AthkarScreen> {
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: SliverList(
-              delegate: SliverChildBuilderBehavior(
-                (context, index) => _buildOtherCategoryItem(otherAthkar[index]),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  try {
+                    return _buildOtherCategoryItem(otherAthkar[index]);
+                  } catch (e) {
+                    return const SizedBox.shrink();
+                  }
+                },
                 childCount: otherAthkar.length,
               ),
             ),
@@ -132,7 +138,7 @@ class _AthkarScreenState extends State<AthkarScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.black.withValues(alpha: 0.3), AppColors.primary],
+                  colors: [Colors.black.withOpacity(0.3), AppColors.primary],
                 ),
               ),
             ),
@@ -143,60 +149,64 @@ class _AthkarScreenState extends State<AthkarScreen> {
   }
 
   Widget _buildMainCategoryCard(Map<String, dynamic> item, String title, String subtitle, IconData icon, List<Color> colors) {
-    return InkWell(
-      onTap: () => _navigateToDetails(item),
-      child: Container(
-        width: double.infinity,
-        constraints: const BoxConstraints(minHeight: 180),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: colors, begin: Alignment.topRight, end: Alignment.bottomLeft),
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 180),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: colors, begin: Alignment.topRight, end: Alignment.bottomLeft),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: colors[0].withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          )
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _navigateToDetails(item),
           borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: colors[0].withValues(alpha: 0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            )
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
-          child: Stack(
-            children: [
-              Positioned(
-                left: -20,
-                bottom: -20,
-                child: Icon(icon, size: 150, color: Colors.white.withValues(alpha: 0.15)),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(25),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                      child: Icon(icon, color: Colors.white, size: 30),
-                    ),
-                    const SizedBox(height: 15),
-                    Text(
-                      title,
-                      style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
-                    ),
-                    Text(
-                      subtitle,
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 14, fontFamily: 'Cairo'),
-                    ),
-                  ],
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: Stack(
+              children: [
+                Positioned(
+                  left: -20,
+                  bottom: -20,
+                  child: Icon(icon, size: 150, color: Colors.white.withOpacity(0.15)),
                 ),
-              ),
-              const Positioned(
-                top: 25,
-                left: 25,
-                child: Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 20),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.all(25),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                        child: Icon(icon, color: Colors.white, size: 30),
+                      ),
+                      const SizedBox(height: 15),
+                      Text(
+                        title,
+                        style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                      ),
+                      Text(
+                        subtitle,
+                        style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14, fontFamily: 'Cairo'),
+                      ),
+                    ],
+                  ),
+                ),
+                const Positioned(
+                  top: 25,
+                  left: 25,
+                  child: Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 20),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -222,7 +232,7 @@ class _AthkarScreenState extends State<AthkarScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
       ),
       child: TextField(
         controller: _searchController,
@@ -242,36 +252,63 @@ class _AthkarScreenState extends State<AthkarScreen> {
   Widget _buildOtherCategoryItem(Map<String, dynamic> item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
+      child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: AppColors.primary.withValues(alpha: 0.05),
-          child: const Icon(Icons.spa_rounded, color: AppColors.primary, size: 20),
+        child: InkWell(
+          onTap: () => _navigateToDetails(item),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.black.withOpacity(0.03)),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: AppColors.primary.withOpacity(0.05),
+                  child: const Icon(Icons.spa_rounded, color: AppColors.primary, size: 20),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Text(
+                    item['category'] ?? 'ذكر',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark, fontFamily: 'Cairo'),
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.black12),
+              ],
+            ),
+          ),
         ),
-        title: Text(
-          item['category'],
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark, fontFamily: 'Cairo'),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.black12),
-        onTap: () => _navigateToDetails(item),
       ),
     );
   }
 
-  void _navigateToDetails(Map<String, dynamic> item) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AthkarDetailsScreen(
-          category: AthkarCategory.fromJson(item),
+void _navigateToDetails(Map<String, dynamic> item) {
+    try {
+      final category = AthkarCategory.fromJson(item);
+      if (category.array.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('لا توجد أذكار في هذا القسم حالياً')),
+        );
+        return;
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AthkarDetailsScreen(
+            category: category,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      debugPrint("Error navigating to athkar details: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر فتح هذا القسم')),
+      );
+    }
   }
 
   Widget _buildIslamicBasicsCard() {
@@ -292,7 +329,7 @@ class _AthkarScreenState extends State<AthkarScreen> {
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1ABC9C).withValues(alpha: 0.3),
+              color: const Color(0xFF1ABC9C).withOpacity(0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
             )
@@ -305,7 +342,7 @@ class _AthkarScreenState extends State<AthkarScreen> {
               Positioned(
                 left: -20,
                 bottom: -20,
-                child: Icon(Icons.menu_book_rounded, size: 150, color: Colors.white.withValues(alpha: 0.15)),
+                child: Icon(Icons.menu_book_rounded, size: 150, color: Colors.white.withOpacity(0.15)),
               ),
               Padding(
                 padding: const EdgeInsets.all(25),
@@ -315,7 +352,7 @@ class _AthkarScreenState extends State<AthkarScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
                       child: const Icon(Icons.library_books_rounded, color: Colors.white, size: 30),
                     ),
                     const SizedBox(height: 15),

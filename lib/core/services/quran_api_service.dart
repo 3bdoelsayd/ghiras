@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 class QuranApiService extends GetConnect {
@@ -21,7 +22,7 @@ class QuranApiService extends GetConnect {
       final List verses = response.body['verses'];
       return verses.map((v) => v['code_v2'] as String).toList();
     } catch (e) {
-      print('Error fetching glyphs: $e');
+      debugPrint('Error fetching glyphs: $e');
       return [];
     }
   }

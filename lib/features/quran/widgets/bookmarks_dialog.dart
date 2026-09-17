@@ -68,7 +68,7 @@ class _BookmarksDialogState extends State<BookmarksDialog> {
                     color: _selectedColor,
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4)],
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4)],
                   ),
                 ),
               ),
@@ -92,7 +92,7 @@ class _BookmarksDialogState extends State<BookmarksDialog> {
             Navigator.pop(context);
             Get.snackbar('تم الحفظ', 'تم إضافة العلامة بنجاح',
                 snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: _selectedColor.withValues(alpha: 0.8),
+                backgroundColor: _selectedColor.withOpacity(0.8),
                 colorText: Colors.white);
           },
           style: ElevatedButton.styleFrom(

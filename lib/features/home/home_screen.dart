@@ -3,11 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart' as geo;
 import 'package:adhan/adhan.dart';
 import 'package:get/get.dart';
-import '../../core/helpers/hive_helper.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:quran/quran.dart' as quran;
 import 'package:share_plus/share_plus.dart';
@@ -16,7 +13,10 @@ import '../../core/constants/app_strings.dart';
 import '../../core/utils/app_router.dart';
 import '../khatmah/logic/khatmah_controller.dart';
 import '../main_layout.dart';
-// import '../../core/constants/app_data.dart';
+import '../../core/services/prayer_service.dart';
+import '../../core/services/notification_service.dart';
+import '../../shared/widgets/support_dialog.dart';
+import 'package:hive/hive.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,10 +26,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  PrayerTimes? _prayerTimes;
+  final PrayerService _prayerService = Get.find<PrayerService>();
   Timer? _timer;
   String _timeUntilNext = '';
-  String _locationName = 'جاري تحديد الموقع...';
   // final Box _settingsBox = Hive.box('settings');
   bool _showAllFeatures = false;
 
@@ -39,7 +38,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   late int _randomSurah;
   late int _randomVerse;
-  final String _randomHadith = '';
 
   @override
   void initState() {
@@ -62,8 +60,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 1200),
     );
 
-    _initDefaultPrayers();
-    _initLocationAndPrayers();
+    // _initDefaultPrayers();
+    // _initLocationAndPrayers();
     _startTimer();
     _refreshRandomContent();
 
@@ -71,29 +69,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _headerAnimController.forward();
       Future.delayed(const Duration(milliseconds: 200), () => _cardAnimController.forward());
       Future.delayed(const Duration(milliseconds: 400), () => _featuresAnimController.forward());
+      
+      // ✅ فحص الصلاحيات وطلبها عند فتح التطبيق لضمان ظهور النافذة
+      Get.find<NotificationService>().requestFullPermissions();
+
+      // ✅ فحص إظهار رسالة الدعم عند فتح التطبيق
+      _checkSupportDialog();
     });
   }
 
-  void _initDefaultPrayers() {
-    // 1. محاولة جلب آخر موقع محفوظ من الذاكرة لضمان عمل الأذان بدون إنترنت أو GPS
-    final double? savedLat = getValue("last_lat");
-    final double? savedLng = getValue("last_lng");
-    final String? savedName = getValue("last_location_name");
+  void _checkSupportDialog() {
+    final box = Hive.box('settings');
+    int openCount = box.get('app_open_count', defaultValue: 0);
+    openCount++;
+    box.put('app_open_count', openCount);
 
-    final params = CalculationMethod.muslim_world_league.getParameters();
-    params.madhab = Madhab.shafi;
-
-    if (savedLat != null && savedLng != null) {
-      _prayerTimes = PrayerTimes.today(Coordinates(savedLat, savedLng), params);
-      _locationName = savedName ?? 'موقع محفوظ';
-    } else {
-      // 2. إذا لم يوجد موقع محفوظ، استخدم القاهرة كافتراضي
-      final cairoCoords = Coordinates(30.0444, 31.2357);
-      _prayerTimes = PrayerTimes.today(cairoCoords, params);
-      _locationName = 'القاهرة (افتراضي)';
+    // إظهار الرسالة كل 5 مرات فتح للتطبيق لضمان التذكير المستمر
+    if (openCount % 5 == 0) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          SupportDialog.show(context);
+        }
+      });
     }
-    _updateCountdown();
   }
+
 
   void _refreshRandomContent() {
     setState(() {
@@ -106,6 +106,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _timer?.cancel();
+    _timer = null;
     _headerAnimController.dispose();
     _cardAnimController.dispose();
     _featuresAnimController.dispose();
@@ -114,77 +115,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_prayerTimes != null) {
+      if (_prayerService.prayerTimes.value != null) {
         _updateCountdown();
       }
     });
   }
 
-  Future<void> _initLocationAndPrayers() async {
-    try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-
-      final params = CalculationMethod.muslim_world_league.getParameters();
-      params.madhab = Madhab.shafi;
-
-      if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
-        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        
-        // إذا كان الموقع مفتوحاً، نقوم بتحديث الإحداثيات (لو المستخدم غير مكانه)
-        if (serviceEnabled) {
-          Position position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.low,
-            timeLimit: const Duration(seconds: 5),
-          );
-          
-          String currentCity = 'موقعك الحالي';
-          try {
-            List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(position.latitude, position.longitude);
-            if (placemarks.isNotEmpty) {
-              currentCity = placemarks[0].locality ?? placemarks[0].country ?? 'موقعك الحالي';
-            }
-          } catch (_) {}
-
-          if (mounted) {
-            setState(() {
-              _prayerTimes = PrayerTimes.today(Coordinates(position.latitude, position.longitude), params);
-              _locationName = currentCity;
-              _updateCountdown();
-            });
-            
-            // حفظ الموقع الجديد في الذاكرة للطلبات القادمة
-            updateValue("last_lat", position.latitude);
-            updateValue("last_lng", position.longitude);
-            updateValue("last_location_name", currentCity);
-            return;
-          }
-        }
-      }
-      
-      // في حالة فشل الحصول على الموقع الجديد (GPS مغلق)، سيعتمد التطبيق على الموقع المحفوظ سابقاً
-    } catch (e) {
-      debugPrint("Location update error: $e");
-    }
-  }
-
   void _updateCountdown() {
-    if (_prayerTimes == null) return;
+    final prayerTimes = _prayerService.prayerTimes.value;
+    if (prayerTimes == null) return;
+
     final now = DateTime.now();
-    final nextPrayer = _prayerTimes!.nextPrayer();
+    final nextPrayer = prayerTimes.nextPrayer();
     DateTime nextTime;
 
     if (nextPrayer == Prayer.none) {
-      nextTime = _prayerTimes!.fajr.add(const Duration(days: 1));
+      nextTime = prayerTimes.fajr.add(const Duration(days: 1));
     } else {
-      nextTime = _prayerTimes!.timeForPrayer(nextPrayer)!;
+      nextTime = prayerTimes.timeForPrayer(nextPrayer)!;
     }
 
     final diff = nextTime.difference(now);
     if (diff.isNegative) {
-      _initLocationAndPrayers();
+      _prayerService.updateSettings();
       return;
     }
 
@@ -192,9 +145,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final minutes = diff.inMinutes % 60;
     final seconds = diff.inSeconds % 60;
 
-    setState(() {
-      _timeUntilNext = '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-    });
+    if (mounted) {
+      setState(() {
+        _timeUntilNext = '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+      });
+    }
   }
 
   String _getPrayerName(Prayer prayer) {
@@ -225,8 +180,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.primary.withValues(alpha: 0.12),
-                    AppColors.primary.withValues(alpha: 0.02),
+                    AppColors.primary.withOpacity(0.12),
+                    AppColors.primary.withOpacity(0.02),
                   ],
                 ),
               ),
@@ -242,8 +197,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFFC9A84C).withValues(alpha: 0.08),
-                    const Color(0xFFC9A84C).withValues(alpha: 0.01),
+                    const Color(0xFFC9A84C).withOpacity(0.08),
+                    const Color(0xFFC9A84C).withOpacity(0.01),
                   ],
                 ),
               ),
@@ -294,10 +249,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   List<Widget> _buildDecorativeParticles() {
     return [
-      Positioned(top: 120, left: 30, child: _particle(6, AppColors.primary.withValues(alpha: 0.15))),
-      Positioned(top: 280, right: 40, child: _particle(4, const Color(0xFFC9A84C).withValues(alpha: 0.2))),
-      Positioned(top: 450, left: 60, child: _particle(5, AppColors.primary.withValues(alpha: 0.1))),
-      Positioned(top: 600, right: 50, child: _particle(3, const Color(0xFFC9A84C).withValues(alpha: 0.15))),
+      Positioned(top: 120, left: 30, child: _particle(6, AppColors.primary.withOpacity(0.15))),
+      Positioned(top: 280, right: 40, child: _particle(4, const Color(0xFFC9A84C).withOpacity(0.2))),
+      Positioned(top: 450, left: 60, child: _particle(5, AppColors.primary.withOpacity(0.1))),
+      Positioned(top: 600, right: 50, child: _particle(3, const Color(0xFFC9A84C).withOpacity(0.15))),
     ];
   }
 
@@ -352,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
+                            color: Colors.black.withOpacity(0.04),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -417,9 +372,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               .animate(CurvedAnimation(parent: _cardAnimController, curve: Curves.easeOutCubic)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _prayerTimes == null
-                ? _buildPrayerCardSkeleton()
-                : _buildPrayerCardContent(),
+            child: Obx(() {
+              final prayerTimes = _prayerService.prayerTimes.value;
+              if (prayerTimes == null || _prayerService.isLoading.value) {
+                return _buildPrayerCardSkeleton();
+              }
+              return _buildPrayerCardContent(prayerTimes);
+            }),
           ),
         ),
       ),
@@ -434,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -444,23 +403,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildPrayerCardContent() {
-    final nextPrayer = _prayerTimes!.nextPrayer();
-    final prayerName = _getPrayerName(nextPrayer);
-    final prayerTime = nextPrayer == Prayer.none
-        ? _prayerTimes!.fajr
-        : _prayerTimes!.timeForPrayer(nextPrayer)!;
-    final timeString = intl.DateFormat.jm('ar').format(prayerTime);
+  Widget _buildPrayerCardContent(PrayerTimes prayerTimes) {
+    try {
+      final nextPrayer = prayerTimes.nextPrayer();
+      final prayerName = _getPrayerName(nextPrayer);
+      final prayerTime = nextPrayer == Prayer.none
+          ? prayerTimes.fajr
+          : prayerTimes.timeForPrayer(nextPrayer) ?? prayerTimes.fajr;
+      
+      String timeString = "";
+      try {
+        timeString = intl.DateFormat.jm('ar').format(prayerTime);
+      } catch (e) {
+        timeString = "${prayerTime.hour}:${prayerTime.minute.toString().padLeft(2, '0')}";
+      }
 
-    final prayers = [
-      {'name': 'الفجر', 'time': _prayerTimes!.fajr},
-      {'name': 'الظهر', 'time': _prayerTimes!.dhuhr},
-      {'name': 'العصر', 'time': _prayerTimes!.asr},
-      {'name': 'المغرب', 'time': _prayerTimes!.maghrib},
-      {'name': 'العشاء', 'time': _prayerTimes!.isha},
-    ];
+      final prayers = [
+        {'name': 'الفجر', 'time': prayerTimes.fajr},
+        {'name': 'الظهر', 'time': prayerTimes.dhuhr},
+        {'name': 'العصر', 'time': prayerTimes.asr},
+        {'name': 'المغرب', 'time': prayerTimes.maghrib},
+        {'name': 'العشاء', 'time': prayerTimes.isha},
+      ];
 
-    final activePrayerIndex = prayers.indexWhere((p) => p['name'] == prayerName);
+      final activePrayerIndex = prayers.indexWhere((p) => p['name'] == prayerName);
 
     return Container(
       decoration: BoxDecoration(
@@ -472,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(22), // ✅ كان 28
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1A5F4A).withValues(alpha: 0.25),
+            color: const Color(0xFF1A5F4A).withOpacity(0.25),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -490,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFC9A84C).withValues(alpha: 0.08),
+                  color: const Color(0xFFC9A84C).withOpacity(0.08),
                 ),
               ),
             ),
@@ -502,7 +468,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.03),
+                  color: Colors.white.withOpacity(0.03),
                 ),
               ),
             ),
@@ -514,12 +480,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4), // ✅ كان 10,5
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        constraints: const BoxConstraints(maxWidth: 160),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: Colors.white.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: const Color(0xFFC9A84C).withValues(alpha: 0.3),
+                            color: const Color(0xFFC9A84C).withOpacity(0.3),
                             width: 1,
                           ),
                         ),
@@ -529,28 +496,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             const Icon(
                               Icons.location_on_rounded,
                               color: Color(0xFFC9A84C),
-                              size: 11, // ✅ كان 12
+                              size: 12,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              _locationName,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 10, // ✅ كان 11
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Cairo',
+                            Flexible(
+                              child: Text(
+                                _prayerService.currentCity.value,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Cairo',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                maxLines: 1,
                               ),
                             ),
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4), // ✅ كان 10,5
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFC9A84C).withValues(alpha: 0.2),
+                          color: const Color(0xFFC9A84C).withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: const Color(0xFFC9A84C).withValues(alpha: 0.4),
+                            color: const Color(0xFFC9A84C).withOpacity(0.4),
                             width: 1,
                           ),
                         ),
@@ -588,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Text(
                             'الصلاة القادمة',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: Colors.white.withOpacity(0.6),
                               fontSize: 10, // ✅ كان 11
                               fontFamily: 'Cairo',
                             ),
@@ -611,7 +582,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Text(
                             'موعد الصلاة',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: Colors.white.withOpacity(0.6),
                               fontSize: 10, // ✅ كان 11
                               fontFamily: 'Cairo',
                             ),
@@ -634,10 +605,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), // ✅ كان 10,10
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
+                      color: Colors.white.withOpacity(0.06),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: Colors.white.withOpacity(0.08),
                         width: 1,
                       ),
                     ),
@@ -658,11 +629,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 shape: BoxShape.circle,
                                 color: isActive
                                     ? const Color(0xFFC9A84C)
-                                    : Colors.white.withValues(alpha: 0.2),
+                                    : Colors.white.withOpacity(0.2),
                                 boxShadow: isActive
                                     ? [
                                   BoxShadow(
-                                    color: const Color(0xFFC9A84C).withValues(alpha: 0.5),
+                                    color: const Color(0xFFC9A84C).withOpacity(0.5),
                                     blurRadius: 6,
                                   ),
                                 ]
@@ -673,7 +644,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             Text(
                               prayer['name'] as String,
                               style: TextStyle(
-                                color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                                color: isActive ? Colors.white : Colors.white.withOpacity(0.5),
                                 fontSize: 9, // ✅ كان 10
                                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                                 fontFamily: 'Cairo',
@@ -683,7 +654,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             Text(
                               time,
                               style: TextStyle(
-                                color: isActive ? const Color(0xFFC9A84C) : Colors.white.withValues(alpha: 0.4),
+                                color: isActive ? const Color(0xFFC9A84C) : Colors.white.withOpacity(0.4),
                                 fontSize: 9, // ✅ كان 10
                                 fontWeight: FontWeight.w600,
                                 fontFamily: 'Cairo',
@@ -701,6 +672,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
     );
+    } catch (e) {
+      return _buildPrayerCardSkeleton();
+    }
   }
 
   Widget _buildKhatmahCard() {
@@ -729,7 +703,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1A5F4A).withValues(alpha: 0.3),
+                        color: const Color(0xFF1A5F4A).withOpacity(0.3),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),
@@ -801,7 +775,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   borderRadius: BorderRadius.circular(15), 
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1A5F4A).withValues(alpha: 0.3),
+                      color: const Color(0xFF1A5F4A).withOpacity(0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -819,7 +793,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           height: 100,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFFC9A84C).withValues(alpha: 0.05),
+                            color: const Color(0xFFC9A84C).withOpacity(0.05),
                           ),
                         ),
                       ),
@@ -853,7 +827,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.1),
+                                    color: Colors.white.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
@@ -873,9 +847,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.05),
+                                color: Colors.white.withOpacity(0.05),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                                border: Border.all(color: Colors.white.withOpacity(0.05)),
                               ),
                               child: Column(
                                 children: [
@@ -917,7 +891,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     borderRadius: BorderRadius.circular(2),
                                     child: LinearProgressIndicator(
                                       value: activeKhatmah.progress,
-                                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                                      backgroundColor: Colors.white.withOpacity(0.1),
                                       valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFC9A84C)),
                                       minHeight: 3,
                                     ),
@@ -986,203 +960,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildHorizontalFeaturesList() {
-    final mainLayoutController = Get.find<MainLayoutController>();
-
-    final features = [
-      {
-        'title': 'القرآن الكريم',
-        'icon': Icons.menu_book_rounded,
-        'gradient': [const Color(0xFF1A5F4A), const Color(0xFF2E8B57)],
-        'lightColor': const Color(0xFFE8F5EE),
-        'route': AppRouter.quranHome,
-        'isRoute': true,
-      },
-      {
-        'title': 'غِراس الجنة',
-        'icon': Icons.local_florist_rounded,
-        'gradient': [const Color(0xFF2E8B57), const Color(0xFF52B788)],
-        'lightColor': const Color(0xFFEAF5ED),
-        'route': AppRouter.ghiras,
-        'isRoute': true,
-        'special': true,
-      },
-      {
-        'title': 'الختمات',
-        'icon': Icons.task_alt_rounded,
-        'gradient': [const Color(0xFF006D77), const Color(0xFF009BA8)],
-        'lightColor': const Color(0xFFE0F4F5),
-        'route': AppRouter.khatmah,
-        'isRoute': true,
-      },
-      {
-        'title': 'الأذكار',
-        'icon': Icons.flare_rounded,
-        'gradient': [const Color(0xFFE07B00), const Color(0xFFFFAB40)],
-        'lightColor': const Color(0xFFFFF3E0),
-        'route': AppRouter.athkar,
-        'isRoute': true,
-      },
-      {
-        'title': 'المسبحة',
-        'icon': Icons.fingerprint_rounded,
-        'gradient': [const Color(0xFF2563EB), const Color(0xFF60A5FA)],
-        'lightColor': const Color(0xFFEFF6FF),
-        'route': '',
-        'isRoute': false,
-        'index': 2,
-      },
-      {
-        'title': 'المواقيت',
-        'icon': Icons.access_time_filled_rounded,
-        'gradient': [const Color(0xFF4338CA), const Color(0xFF818CF8)],
-        'lightColor': const Color(0xFFEEF2FF),
-        'route': '',
-        'isRoute': false,
-        'index': 1,
-      },
-      {
-        'title': 'القراء',
-        'icon': Icons.record_voice_over_rounded,
-        'gradient': [const Color(0xFF7C3D12), const Color(0xFFC2763A)],
-        'lightColor': const Color(0xFFFDF0E6),
-        'route': '',
-        'isRoute': false,
-        'index': 3,
-      },
-      {
-        'title': 'الزكاة',
-        'icon': Icons.calculate_rounded,
-        'gradient': [const Color(0xFF0F172A), const Color(0xFF334155)],
-        'lightColor': const Color(0xFFF1F5F9),
-        'route': AppRouter.zakat,
-        'isRoute': true,
-      },
-    ];
-
-    final displayFeatures = _showAllFeatures ? features : features.take(4).toList();
-
-    return SliverToBoxAdapter(
-      child: FadeTransition(
-        opacity: _featuresAnimController,
-        child: SlideTransition(
-          position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-              .animate(CurvedAnimation(parent: _featuresAnimController, curve: Curves.easeOutCubic)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.78,
-              ),
-              itemCount: displayFeatures.length,
-              itemBuilder: (context, index) {
-                final feature = displayFeatures[index];
-                final isSpecial = feature['special'] == true;
-                final gradientColors = feature['gradient'] as List<Color>;
-                final lightColor = feature['lightColor'] as Color;
-
-                return GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    if (feature['isRoute'] == true) {
-                      context.push(feature['route'] as String);
-                    } else {
-                      mainLayoutController.changeIndex(feature['index'] as int);
-                    }
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: gradientColors[0].withValues(alpha: isSpecial ? 0.18 : 0.10),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: gradientColors,
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: gradientColors[0].withValues(alpha: 0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Icon(
-                                feature['icon'] as IconData,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                              if (isSpecial)
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.9),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.auto_awesome,
-                                      size: 6,
-                                      color: gradientColors[0],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          feature['title'] as String,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: isSpecial ? FontWeight.w800 : FontWeight.w700,
-                            color: const Color(0xFF2C3E50),
-                            fontFamily: 'Cairo',
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDailyContentCards() {
     return SliverToBoxAdapter(
       child: FadeTransition(
@@ -1212,13 +989,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.08),
+            color: color.withOpacity(0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
         border: Border.all(
-          color: color.withValues(alpha: 0.08),
+          color: color.withOpacity(0.08),
           width: 1,
         ),
       ),
@@ -1241,7 +1018,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.1),
+                              color: color.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(icon, color: color, size: 15),
@@ -1262,12 +1039,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         children: [
                           GestureDetector(
                             onTap: () => Share.share('$content\n\n[$subtitle]\nتطبيق ${AppStrings.appName}\n${AppStrings.appStoreLink}'),
-                            child: Icon(Icons.share_rounded, size: 16, color: color.withValues(alpha: 0.5)),
+                            child: Icon(Icons.share_rounded, size: 16, color: color.withOpacity(0.5)),
                           ),
                           const SizedBox(width: 14),
                           GestureDetector(
                             onTap: _refreshRandomContent,
-                            child: Icon(Icons.refresh_rounded, size: 16, color: color.withValues(alpha: 0.5)),
+                            child: Icon(Icons.refresh_rounded, size: 16, color: color.withOpacity(0.5)),
                           ),
                         ],
                       ),
@@ -1302,7 +1079,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       subtitle,
                       style: TextStyle(
                         fontSize: 10,
-                        color: color.withValues(alpha: 0.5),
+                        color: color.withOpacity(0.5),
                         fontFamily: 'Cairo',
                         fontWeight: FontWeight.w600,
                       ),

@@ -139,7 +139,7 @@ class _ScreenShotPreviewPageState extends State<ScreenShotPreviewPage> {
       decoration: BoxDecoration(
         color: backgroundColors[selectedThemeIndex],
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
       ),
       child: Column(
         children: [
@@ -170,7 +170,7 @@ class _ScreenShotPreviewPageState extends State<ScreenShotPreviewPage> {
           const SizedBox(height: 20),
           Text(
             'غِراس - صدقة جارية',
-            style: TextStyle(fontSize: 12, color: primaryColors[selectedThemeIndex].withValues(alpha: 0.5), fontFamily: 'cairo'),
+            style: TextStyle(fontSize: 12, color: primaryColors[selectedThemeIndex].withOpacity(0.5), fontFamily: 'cairo'),
           ),
         ],
       ),

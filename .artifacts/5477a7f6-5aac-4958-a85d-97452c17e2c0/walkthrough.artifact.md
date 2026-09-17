@@ -1,24 +1,31 @@
-# Walkthrough - Build System Fix and Upgrade
+# Walkthrough - Detailed Location Display
 
-I have updated the project build configuration to meet Flutter's latest requirements and fixed the issue where the APK could not be found after building.
+I have implemented a more detailed and prominent location display on the home screen, allowing you to see your exact location (Neighborhood, City, etc.) and update it easily.
 
 ## Changes Made
 
-### 1. Build Version Upgrades
-- Updated **Android Gradle Plugin (AGP)** to **8.11.1**.
-- Updated **Kotlin Gradle Plugin (KGP)** to **2.2.20**.
-- These changes resolve the warnings issued by the Flutter tool and ensure compatibility with the latest Android features.
+### 1. Detailed Address Fetching
+- Updated `PrayerService` to combine multiple fields from the location data (`neighborhood`, `city`, `governorate`).
+- This results in a more specific address like "حي المعادي، القاهرة" instead of just "القاهرة".
 
-### 2. Infrastructure Fix
-- Restored the symbolic link between the Android build directory and the Flutter build directory.
-- **Link Created:** `build/app` → `android/app/build`.
-- This allows the `flutter` command to correctly locate the generated APK file after the build process completes.
+### 2. Location Display in Greeting
+- Added a new location card at the top of the Home Screen next to the greeting message.
+- This makes the location visible immediately upon opening the app.
+
+### 3. Manual Location Refresh
+- Added a refresh icon to the location card.
+- Tapping this card will trigger a fresh location update and show a confirmation message.
+
+### 4. Improved Prayer Card UI
+- Increased the font size and visibility of the location name inside the main prayer card.
+- Adjusted constraints to handle longer address strings without clipping.
 
 ## Verification Results
 
 ### Automated Tests
-- Successfully ran `flutter build apk --debug`.
-- **Result:** `✓ Built build/app/outputs/flutter-apk/app-debug.apk`
+- Ran `flutter build apk --debug`.
+- **Result:** `✓ Built build/app/outputs/flutter-apk/app-debug.apk` (Build successful with no syntax errors).
 
 ### Manual Verification
-- The project is now ready to be run on your device.
+- You can now open the app and see your detailed location at the top right of the greeting section.
+- Try tapping the location card to refresh your position.

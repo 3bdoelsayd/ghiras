@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hijri/hijri_calendar.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/string_utils.dart';
 import 'package:intl/intl.dart' as intl;
 
 class CalendarScreen extends StatefulWidget {
@@ -56,7 +57,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
+        color: AppColors.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonHideUnderline(
@@ -65,7 +66,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           items: List.generate(20, (i) => 1440 + i).map((y) {
             return DropdownMenuItem(
               value: y,
-              child: Text(_toArabicNumbers(y.toString()), style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+              child: Text(y.toString().toArabicDigits, style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
             );
           }).toList(),
           onChanged: (v) {
@@ -94,7 +95,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 15, offset: const Offset(0, 5))
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5))
         ],
       ),
       child: Column(
@@ -102,7 +103,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.05),
+              color: AppColors.primary.withOpacity(0.05),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Row(
@@ -114,7 +115,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
                 Text(
                   intl.DateFormat('MMMM yyyy', 'ar').format(firstDayGregorian),
-                  style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: AppColors.textGrey.withValues(alpha: 0.7)),
+                  style: TextStyle(fontFamily: 'Cairo', fontSize: 13, color: AppColors.textGrey.withOpacity(0.7)),
                 ),
               ],
             ),
@@ -152,7 +153,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            _toArabicNumbers(day.toString()),
+                            day.toString().toArabicDigits,
                             style: TextStyle(
                               fontSize: 13,
                               fontFamily: 'Cairo',
@@ -162,12 +163,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             ),
                           ),
                           Text(
-                            _toArabicNumbers(gDate.day.toString()),
+                            gDate.day.toString().toArabicDigits,
                             style: TextStyle(
                               fontSize: 8,
                               fontFamily: 'Cairo',
                               height: 1.0,
-                              color: isToday ? Colors.white.withValues(alpha: 0.8) : Colors.grey,
+                              color: isToday ? Colors.white.withOpacity(0.8) : Colors.grey,
                             ),
                           ),
                         ],
@@ -199,14 +200,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return _today.hYear == y && _today.hMonth == m && _today.hDay == d;
   }
 
-  String _toArabicNumbers(String input) {
-    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    for (int i = 0; i < english.length; i++) {
-      input = input.replaceAll(english[i], arabic[i]);
-    }
-    return input;
-  }
 
   String _getArabicHijriMonth(int month) {
     const months = ['محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 'جمادى الآخرة', 'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];

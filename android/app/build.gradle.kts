@@ -3,7 +3,7 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.ghiras.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36 // التحديث المطلوب من جوجل بلاي لعام 2026
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -39,8 +39,8 @@ android {
 
     defaultConfig {
         applicationId = "com.ghiras.app"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = flutter.minSdkVersion // دعم الهواتف القديمة (Android 5.0+)
+        targetSdk = 36 // التحديث المطلوب من جوجل بلاي لعام 2026
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
@@ -55,9 +55,9 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            // إضافة التحسينات اللازمة للإنتاج
-            isMinifyEnabled = false // اجعلها true إذا أردت تصغير حجم التطبيق (تطلب اختبار دقيق)
-            isShrinkResources = false
+            // تفعيل التحسينات لتقليل حجم التطبيق وحماية الكود
+            isMinifyEnabled = true 
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

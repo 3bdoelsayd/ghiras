@@ -8,7 +8,10 @@ import '../../core/constants/app_colors.dart';
 import '../../features/quran/logic/player_bloc/player_bloc_bloc.dart';
 import '../../features/quran/logic/player_bar_bloc/player_bar_bloc.dart';
 import '../../core/helpers/hive_helper.dart';
+import '../../core/services/sleep_timer_service.dart';
+import 'sleep_timer_dialog.dart';
 import 'package:ghiras/main.dart';
+import 'package:get/get.dart';
 
 class MiniPlayerBar extends StatelessWidget {
   const MiniPlayerBar({super.key});
@@ -53,7 +56,7 @@ class MiniPlayerBar extends StatelessWidget {
                             width: 40.w,
                             height: 40.h,
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.1),
+                              color: AppColors.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(10.r),
                               image: photoUrl != null 
                                 ? DecorationImage(
@@ -104,7 +107,7 @@ class MiniPlayerBar extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: Colors.grey.withValues(alpha: 0.1)),
+                    Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
                   ],
                 );
               },
@@ -140,6 +143,8 @@ class MiniPlayerBar extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    final timerService = Get.find<SleepTimerService>();
+
     return StreamBuilder<PlayerState>(
       stream: audioPlayer.playerStateStream,
       builder: (context, snapshot) {
@@ -150,12 +155,24 @@ class MiniPlayerBar extends StatelessWidget {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Obx(() => IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              icon: Icon(
+                timerService.isActive ? Icons.timer_rounded : Icons.timer_outlined,
+                color: timerService.isActive ? AppColors.primary : Colors.grey.shade400,
+                size: 18.sp,
+              ),
+              onPressed: () => SleepTimerDialog.show(context),
+            )),
+            SizedBox(width: 8.w),
             // السورة السابقة (تكون على اليمين في العربي)
             _playerBtn(
               icon: Icons.skip_previous_rounded, 
               onTap: audioPlayer.hasPrevious ? () => audioPlayer.seekToPrevious() : null,
               size: 22,
             ),
+// ...
             
             GestureDetector(
               onTap: () {
@@ -170,7 +187,7 @@ class MiniPlayerBar extends StatelessWidget {
                 height: 32.h,
                 margin: EdgeInsets.symmetric(horizontal: 4.w),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
+                  color: AppColors.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: processingState == ProcessingState.loading ||

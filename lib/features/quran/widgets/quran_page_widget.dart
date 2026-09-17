@@ -67,7 +67,7 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
               color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFFEFBF6),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.1),
+                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
                   blurRadius: 15,
                   spreadRadius: 1,
                   offset: Offset(isLeftPage ? 10 : -10, 0),
@@ -318,15 +318,15 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
             height: 1.6,
             color: isDark ? Colors.white : Colors.black,
             backgroundColor: isSelected
-                ? AppColors.primary.withValues(alpha: 0.2)
+                ? AppColors.primary.withOpacity(0.2)
                 : isSelectedKey
-                ? AppColors.primary.withValues(alpha: 0.15)
+                ? AppColors.primary.withOpacity(0.15)
                 : isStarred
-                ? Colors.amber.withValues(alpha: 0.1)
+                ? Colors.amber.withOpacity(0.1)
                 : bookmarkColor != null
-                ? bookmarkColor.withValues(alpha: 0.2)
+                ? bookmarkColor.withOpacity(0.2)
                 : isBookmarked
-                ? Colors.orange.withValues(alpha: 0.15)
+                ? Colors.orange.withOpacity(0.15)
                 : Colors.transparent,
             decoration: (isBookmarked || bookmarkColor != null)
                 ? TextDecoration.underline
@@ -373,15 +373,15 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
         style: TextStyle(
           color: isDark ? Colors.white : Colors.black,
           backgroundColor: isSelected
-              ? AppColors.primary.withValues(alpha: 0.2)
+              ? AppColors.primary.withOpacity(0.2)
               : isSelectedKey
-              ? AppColors.primary.withValues(alpha: 0.15)
+              ? AppColors.primary.withOpacity(0.15)
               : isStarred
-              ? Colors.amber.withValues(alpha: 0.1)
+              ? Colors.amber.withOpacity(0.1)
               : bookmarkColor != null
-              ? bookmarkColor.withValues(alpha: 0.2)
+              ? bookmarkColor.withOpacity(0.2)
               : isBookmarked
-              ? Colors.orange.withValues(alpha: 0.15)
+              ? Colors.orange.withOpacity(0.15)
               : Colors.transparent,
           decoration:
           (isBookmarked || bookmarkColor != null)
@@ -458,7 +458,7 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
         fit: BoxFit.contain,
         color: isSpecialPage
             ? const Color(0xFF2E7D32)
-            : (isDark ? Colors.white : AppColors.primary.withValues(alpha: 0.9)),
+            : (isDark ? Colors.white : AppColors.primary.withOpacity(0.9)),
       ),
     );
   }

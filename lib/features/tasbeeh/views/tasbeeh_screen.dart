@@ -25,7 +25,7 @@ class TasbeehScreen extends StatelessWidget {
           Positioned(
             top: -100,
             right: -50,
-            child: CircleAvatar(radius: 150, backgroundColor: AppColors.primary.withValues(alpha: 0.03)),
+            child: CircleAvatar(radius: 150, backgroundColor: AppColors.primary.withOpacity(0.03)),
           ),
           SafeArea(
             child: SingleChildScrollView(
@@ -60,7 +60,7 @@ class TasbeehScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildStatItem('إجمالي التسبيح', '${controller.totalCount.value}', Icons.all_inclusive_rounded),
-              Container(width: 1, height: 30, color: Colors.grey.withValues(alpha: 0.2)),
+              Container(width: 1, height: 30, color: Colors.grey.withOpacity(0.2)),
               _buildStatItem('التحدي الحالي', controller.selectedTarget.value == 0 ? 'لا يوجد' : '${controller.selectedTarget.value}', Icons.emoji_events_rounded),
             ],
           ),
@@ -98,9 +98,9 @@ class TasbeehScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: Colors.white,
                 boxShadow: [
-                  BoxShadow(color: AppColors.primary.withValues(alpha: 0.15), blurRadius: 40, offset: const Offset(0, 20)),
+                  BoxShadow(color: AppColors.primary.withOpacity(0.15), blurRadius: 40, offset: const Offset(0, 20)),
                 ],
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.05), width: 8),
+                border: Border.all(color: AppColors.primary.withOpacity(0.05), width: 8),
               ),
               child: Center(
                 child: Container(
@@ -170,7 +170,7 @@ class TasbeehScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: isSelected ? AppColors.primary : Colors.black12),
             boxShadow: [
-              if (isSelected) BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
+              if (isSelected) BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
           child: Column(

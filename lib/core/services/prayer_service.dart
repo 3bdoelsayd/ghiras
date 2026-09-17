@@ -42,10 +42,35 @@ class PrayerService extends GetxController {
           lng = position.longitude;
           
           try {
+            await setLocaleIdentifier("ar");
             List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
             if (placemarks.isNotEmpty) {
               Placemark place = placemarks[0];
-              cityName = place.locality ?? place.subLocality ?? place.administrativeArea ?? "موقعي";
+              
+              // استخلاص أدق التفاصيل الممكنة
+              final village = place.subLocality ?? ""; // القرية أو الحي الصغير
+              final area = place.locality ?? "";       // المدينة أو المركز
+              final governorate = place.administrativeArea ?? ""; // المحافظة
+              
+              List<String> parts = [];
+              
+              // ترتيب منطقي: القرية، المدينة
+              if (village.isNotEmpty) parts.add(village);
+              if (area.isNotEmpty && area != village) parts.add(area);
+              
+              // إذا لم نجد قرية أو مدينة، نأخذ اسم الشارع أو المنطقة الإدارية
+              if (parts.isEmpty) {
+                if (place.thoroughfare != null && place.thoroughfare!.isNotEmpty) {
+                  parts.add(place.thoroughfare!);
+                }
+                if (governorate.isNotEmpty) parts.add(governorate);
+              }
+
+              if (parts.isNotEmpty) {
+                cityName = parts.join("، ");
+              } else {
+                cityName = "موقعي الحالي";
+              }
             }
           } catch (e) {
             cityName = "موقعي";
@@ -64,7 +89,7 @@ class PrayerService extends GetxController {
       }
 
       currentCity.value = cityName ?? "القاهرة";
-      _calculatePrayerTimes(lat ?? 30.0444, lng ?? 31.2357);
+      await _calculatePrayerTimes(lat ?? 30.0444, lng ?? 31.2357);
       _updateNextPrayer();
     } catch (e) {
       debugPrint("Prayer Update Error: $e");
@@ -93,10 +118,12 @@ class PrayerService extends GetxController {
 
     if (permission == LocationPermission.deniedForever) return Future.error('تم رفض إذن الموقع بشكل دائم');
 
-    return await Geolocator.getCurrentPosition();
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.best,
+    );
   }
 
-  void _calculatePrayerTimes(double lat, double lng) {
+  Future<void> _calculatePrayerTimes(double lat, double lng) async {
     final coordinates = Coordinates(lat, lng);
     
     String methodKey = _settingsBox.get('calculationMethod', defaultValue: "muslim_world_league");
@@ -107,6 +134,7 @@ class PrayerService extends GetxController {
     params.madhab = madhabKey == "hanafi" ? Madhab.hanafi : Madhab.shafi;
 
     params.adjustments.fajr = _settingsBox.get('fajrOffset', defaultValue: 0);
+    params.adjustments.sunrise = _settingsBox.get('sunriseOffset', defaultValue: 0);
     params.adjustments.dhuhr = _settingsBox.get('dhuhrOffset', defaultValue: 0);
     params.adjustments.asr = _settingsBox.get('asrOffset', defaultValue: 0);
     params.adjustments.maghrib = _settingsBox.get('maghribOffset', defaultValue: 0);
@@ -115,7 +143,25 @@ class PrayerService extends GetxController {
     final date = DateComponents.from(DateTime.now());
     prayerTimes.value = PrayerTimes(coordinates, date, params);
 
-    _scheduleAthanNotifications();
+    // إلغاء كافة الإشعارات القديمة وإعادة جدولتها بشكل متسلسل مع انتظار التنفيذ
+    await _rescheduleAllNotifications();
+  }
+
+  Future<void> _rescheduleAllNotifications() async {
+    final notificationService = Get.find<NotificationService>();
+    
+    // إلغاء الإشعارات القديمة بشكل متسلسل
+    for (int i = 0; i <= 7; i++) {
+      final date = DateTime.now().add(Duration(days: i));
+      final int dayOfYear = _getDayOfYear(date);
+      for (int prayerIndex = 0; prayerIndex < 5; prayerIndex++) {
+        final int notificationId = (dayOfYear * 10) + prayerIndex;
+        await notificationService.cancelNotification(notificationId);
+      }
+    }
+    
+    // انتظار انتهاء الحذف قبل بدء الجدولة الجديدة
+    await _scheduleAthanNotifications();
   }
 
   CalculationMethod _getCalculationMethod(String key) {
@@ -134,14 +180,19 @@ class PrayerService extends GetxController {
     }
   }
 
-  void _scheduleAthanNotifications() {
+  Future<void> _scheduleAthanNotifications() async {
     if (prayerTimes.value == null) return;
     
     final notificationService = Get.find<NotificationService>();
     final box = Hive.box('settings');
 
-    // جدولة أذان لمدة 7 أيام قادمة لضمان استمرارية التنبيهات حتى لو لم يفتح المستخدم التطبيق يومياً
-    for (int i = 0; i <= 7; i++) {
+    // التأكد من أن المستخدم مفعل خاصية مواقيت الصلاة بشكل عام
+    if (!(box.get('shouldUsePrayerTimes', defaultValue: true))) return;
+
+    debugPrint("Starting Adhan scheduling...");
+
+    // جدولة أذان لمدة 5 أيام قادمة (تقليل المدة لزيادة الثبات)
+    for (int i = 0; i <= 5; i++) {
       final date = DateTime.now().add(Duration(days: i));
       final coordinates = prayerTimes.value!.coordinates;
       final params = prayerTimes.value!.calculationParameters;
@@ -160,23 +211,33 @@ class PrayerService extends GetxController {
         'العشاء': times.isha,
       };
 
-      adhans.forEach((name, time) {
+      int prayerIndex = 0;
+      for (var entry in adhans.entries) {
+        final name = entry.key;
+        final time = entry.value;
+        
         bool isEnabled = box.get('athan_$name', defaultValue: true);
         
         if (isEnabled && time.isAfter(DateTime.now())) {
-          // استخدام ID فريد جداً يعتمد على اليوم واسم الصلاة
-          final notificationId = "${date.year}${date.month}${date.day}${name.hashCode}".hashCode;
+          final int dayOfYear = _getDayOfYear(date);
+          final int notificationId = (dayOfYear * 100) + (date.month * 10) + prayerIndex; // معرف أكثر تميزاً
           
-          notificationService.scheduleNotification(
+          await notificationService.scheduleNotification(
             id: notificationId,
-            title: 'حان الآن موعد أذان $name',
+            title: 'حان الآن موعد صلاة $name',
             body: 'حي على الصلاة، حي على الفلاح',
             scheduledDate: time,
             sound: 'azan',
           );
         }
-      });
+        prayerIndex++;
+      }
     }
+    debugPrint("Adhan scheduling completed.");
+  }
+
+  int _getDayOfYear(DateTime date) {
+    return date.difference(DateTime(date.year, 1, 1)).inDays + 1;
   }
 
   void _updateNextPrayer() {
@@ -224,10 +285,33 @@ class PrayerService extends GetxController {
       'تنبيه',
       'تم ${!currentStatus ? 'تفعيل' : 'إيقاف'} صوت أذان $prayerName',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: !currentStatus ? Colors.green.withValues(alpha: 0.7) : Colors.red.withValues(alpha: 0.7),
+      backgroundColor: !currentStatus ? Colors.green.withOpacity(0.7) : Colors.red.withOpacity(0.7),
       colorText: Colors.white,
     );
 
     _scheduleAthanNotifications();
+  }
+
+  // دالة لتجربة الأذان فوراً للتأكد من عمل الصوت والإشعارات
+  Future<void> testAthan() async {
+    final notificationService = Get.find<NotificationService>();
+    final testTime = DateTime.now().add(const Duration(seconds: 5));
+    
+    await notificationService.scheduleNotification(
+      id: 999,
+      title: 'تجربة الأذان الجديد (V8)',
+      body: 'إذا سمعت هذا الصوت، فإن الأذان يعمل بنظام الإشعارات الجديد بنجاح',
+      scheduledDate: testTime,
+      sound: 'azan',
+    );
+    
+    Get.snackbar(
+      'تجربة الأذان',
+      'سيتم إطلاق إشعار تجريبي بعد 5 ثوانٍ، يرجى قفل الشاشة للتجربة',
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.blue.withOpacity(0.7),
+      colorText: Colors.white,
+      duration: const Duration(seconds: 5),
+    );
   }
 }

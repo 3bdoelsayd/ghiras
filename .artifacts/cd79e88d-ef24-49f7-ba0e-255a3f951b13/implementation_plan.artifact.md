@@ -15,6 +15,12 @@ The project is currently failing to build because some dependencies (`androidx.b
 - Update `com.android.application` version from `8.6.0` to `8.11.1`.
 - Update `org.jetbrains.kotlin.android` version from `1.9.25` to `2.2.20`.
 
+#### [MODIFY] [build.gradle.kts](file:///home/sigma/StudioProjects/ghiras/android/build.gradle.kts)
+- Migrate `kotlinOptions` to `compilerOptions` in subprojects configuration.
+
+#### [MODIFY] [app/build.gradle.kts](file:///home/sigma/StudioProjects/ghiras/android/app/build.gradle.kts)
+- Migrate `kotlinOptions` to `compilerOptions` in the `android` block.
+
 ## Verification Plan
 
 ### Automated Tests

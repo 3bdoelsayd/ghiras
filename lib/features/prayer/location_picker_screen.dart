@@ -98,8 +98,19 @@ class LocationPickerController extends GetxController {
       // الحصول على اسم المدينة من الإحداثيات
       String cityName = "موقعي الحالي";
       try {
+        await setLocaleIdentifier("ar");
         List<Placemark> p = await placemarkFromCoordinates(pos.latitude, pos.longitude);
-        if (p.isNotEmpty) cityName = p.first.locality ?? p.first.subAdministrativeArea ?? "موقعي الحالي";
+        if (p.isNotEmpty) {
+          final place = p.first;
+          final neighborhood = place.subLocality ?? "";
+          final city = place.subAdministrativeArea ?? place.locality ?? "";
+          
+          if (neighborhood.isNotEmpty && city.isNotEmpty && neighborhood != city) {
+            cityName = "$neighborhood، $city";
+          } else {
+            cityName = city.isNotEmpty ? city : (place.administrativeArea ?? "موقعي الحالي");
+          }
+        }
       } catch (_) {}
 
       _onLocationUpdated(cityName, pos.latitude, pos.longitude, false);
