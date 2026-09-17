@@ -82,6 +82,9 @@ class NotificationService extends GetxService {
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
+      defaultPresentAlert: true,
+      defaultPresentSound: true,
+      defaultPresentBadge: true,
     );
 
     const InitializationSettings initializationSettings = InitializationSettings(
@@ -100,8 +103,14 @@ class NotificationService extends GetxService {
       await requestFullPermissions();
       await checkBatteryOptimization();
     } else if (Platform.isIOS) {
-      // لـ iOS نطلب صلاحية الإشعارات العادية والموقع بشكل مباشر
-      await Permission.notification.request();
+      // لـ iOS نطلب صلاحية الإشعارات والـ Foreground الموثوقة والموقع
+      await _notificationsPlugin
+          .resolvePlatformSpecificImplementation<DarwinFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
       await Permission.locationWhenInUse.request();
     }
 
@@ -352,7 +361,7 @@ class NotificationService extends GetxService {
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
-            sound: null, // استخدام صوت التنبيه الافتراضي الموثوق لنظام iOS لمنع حجب الإشعار
+            sound: 'azan_ios.mp3', // استخدام ملف الصوت المخصص المكون من 15 ثانية والمتوافق مع شروط iOS
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

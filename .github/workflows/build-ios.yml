@@ -59,6 +59,10 @@ jobs:
           ls -la build/ios/iphoneos/ || true
           if [ -d "build/ios/iphoneos/Runner.app" ]; then
             echo "App exists — continuing."
+            if [ -f "assets/audio/azan_ios.mp3" ]; then
+              cp assets/audio/azan_ios.mp3 build/ios/iphoneos/Runner.app/azan_ios.mp3
+              echo "Successfully injected azan_ios.mp3 into Runner.app bundle."
+            fi
           else
             echo "App was NOT built."
             exit 1

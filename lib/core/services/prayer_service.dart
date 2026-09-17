@@ -244,12 +244,38 @@ class PrayerService extends GetxController {
     return date.difference(DateTime(date.year, 1, 1)).inDays + 1;
   }
 
+  // متغير لمنع تكرار تشغيل الأذان في نفس الدقيقة
+  String _lastPlayedPrayerMinute = "";
+
   void _updateNextPrayer() {
     if (prayerTimes.value == null) return;
 
     final now = DateTime.now();
     final next = prayerTimes.value!.nextPrayer();
     
+    // التحقق التلقائي إذا حان وقت أي صلاة الآن لتشغيل الأذان كاملاً داخل التطبيق
+    final currentPrayer = prayerTimes.value!.currentPrayer();
+    if (currentPrayer != Prayer.none && currentPrayer != Prayer.sunrise) {
+      final prayerTime = prayerTimes.value!.timeForPrayer(currentPrayer);
+      if (prayerTime != null) {
+        final diffInMinutes = now.difference(prayerTime).inMinutes;
+        final currentMinuteStr = "${now.year}-${now.month}-${now.day}-${now.hour}-${now.minute}";
+        
+        // إذا كنا في نفس دقيقة الصلاة ولم نقم بتشغيله بعد
+        if (diffInMinutes == 0 && _lastPlayedPrayerMinute != currentMinuteStr) {
+          final arabicName = _getArabicName(currentPrayer);
+          final box = Hive.box('settings');
+          bool isEnabled = box.get('athan_$arabicName', defaultValue: true);
+          bool usePrayerTimes = box.get('shouldUsePrayerTimes', defaultValue: true);
+          
+          if (isEnabled && usePrayerTimes) {
+            _lastPlayedPrayerMinute = currentMinuteStr;
+            _playFullLocalAzan();
+          }
+        }
+      }
+    }
+
     if (next == Prayer.none) {
       nextPrayerName.value = "الفجر";
     } else {
@@ -259,7 +285,29 @@ class PrayerService extends GetxController {
       timeToNextPrayer.value = _formatDuration(diff);
     }
 
-    Future.delayed(const Duration(seconds: 30), _updateNextPrayer);
+    Future.delayed(const Duration(seconds: 20), _updateNextPrayer); // تقليل المدة لزيادة دقة الفحص
+  }
+
+  // دالة تشغيل الأذان الكامل من ملفات الـ assets
+  void _playFullLocalAzan() async {
+    try {
+      final audioPlayerInstance = Get.find<com.just_audio.AudioPlayer>(); // استخدام اسم الباكج الصحيح للـ AudioPlayer المشترك
+      await audioPlayerInstance.stop();
+      await audioPlayerInstance.setAudioSource(
+        com.just_audio.AudioSource.uri(
+          Uri.parse("asset:///assets/audio/azan.mp3"),
+          tag: const com.just_audio.MediaItem(
+            id: 'live_azan_ios',
+            album: 'صوت الأذان',
+            title: 'صلاة الفريضة',
+            artist: 'تطبيق غراس',
+          ),
+        ),
+      );
+      await audioPlayerInstance.play();
+    } catch (e) {
+      debugPrint("Error playing foreground local azan: $e");
+    }
   }
 
   String _getArabicName(Prayer prayer) {
@@ -299,8 +347,11 @@ class PrayerService extends GetxController {
   // دالة لتجربة الأذان فوراً للتأكد من عمل الصوت والإشعارات
   Future<void> testAthan() async {
     final notificationService = Get.find<NotificationService>();
-    final testTime = DateTime.now().add(const Duration(seconds: 5));
+    final testTime = DateTime.now().add(const Duration(seconds: 2));
     
+    // تشغيل الأذان الصوتي كاملاً فوراً للتجربة السريعة داخل التطبيق
+    _playFullLocalAzan();
+
     await notificationService.scheduleNotification(
       id: 999,
       title: 'تجربة الأذان الجديد (V8)',
@@ -311,9 +362,9 @@ class PrayerService extends GetxController {
     
     Get.snackbar(
       'تجربة الأذان',
-      'سيتم إطلاق إشعار تجريبي بعد 5 ثوانٍ، يرجى قفل الشاشة للتجربة',
+      'تم إطلاق صوت الأذان كاملاً الآن، وسيصلك إشعار منبثق للتأكيد',
       snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.blue.withOpacity(0.7),
+      backgroundColor: Colors.blue.withValues(alpha: 0.7),
       colorText: Colors.white,
       duration: const Duration(seconds: 5),
     );
