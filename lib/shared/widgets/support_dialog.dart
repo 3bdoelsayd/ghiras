@@ -73,10 +73,10 @@ class SupportDialog extends StatelessWidget {
           _buildOption(
             icon: Icons.phone_android_rounded,
             title: "فودافون كاش",
-            subtitle: "01070753890",
+            subtitle: "01070753891",
             color: Colors.red,
             isCopyable: true,
-            copyValue: "01070753890",
+            copyValue: "01070753891",
           ),
         ],
       ),
