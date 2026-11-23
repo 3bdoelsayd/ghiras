@@ -838,10 +838,10 @@ class SettingsScreen extends StatelessWidget {
             _buildSupportOption(
               icon: Icons.phone_android_rounded,
               title: "فودافون كاش",
-              subtitle: "01070753890",
+              subtitle: "01070753891",
               color: Colors.red,
               onCopy: () {
-                Clipboard.setData(const ClipboardData(text: "01070753890"));
+                Clipboard.setData(const ClipboardData(text: "01070753891"));
                 Get.snackbar(
                   "تم النسخ",
                   "تم نسخ رقم فودافون كاش",
