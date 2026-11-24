@@ -183,7 +183,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
         body: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) => [
             SliverAppBar(
-              expandedHeight: 250.h,
+              expandedHeight: 310.h,
               pinned: true,
               floating: true,
               backgroundColor: _kDarkGreen,
@@ -223,7 +223,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
   Widget _buildHeaderContent() {
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(18.w, 10.h, 18.w, 0),
+        padding: EdgeInsets.fromLTRB(18.w, 6.h, 18.w, 0),
         child: Column(
           children: [
             // Title row
@@ -262,7 +262,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                 ),
               ],
             ),
-            const Spacer(),
+            SizedBox(height: 8.h),
             // Stats
             Row(
               children: [
@@ -273,10 +273,10 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                 _statBox("$_favCount", "مفضلة"),
               ],
             ),
-            SizedBox(height: 12.h),
+            SizedBox(height: 8.h),
             // Search
             Container(
-              height: 38.h,
+              height: 36.h,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(11.r),
@@ -295,7 +295,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                 ),
               ),
             ),
-            SizedBox(height: 10.h),
+            SizedBox(height: 8.h),
             // Tabs
             Row(
               children: [
@@ -306,7 +306,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                 _tab("المحملة", "downloads"),
               ],
             ),
-            SizedBox(height: 10.h),
+            SizedBox(height: 8.h),
           ],
         ),
       ),

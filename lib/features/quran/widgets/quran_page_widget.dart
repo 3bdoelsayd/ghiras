@@ -47,7 +47,6 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
           return const Center(child: Text('جاري التحميل...'));
         }
 
-        // تحسين: جلب أول كلمة بطريقة أسرع
         QuranWord? firstWord;
         for (var l in lines) {
           if (l.words.isNotEmpty) {
@@ -62,66 +61,59 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
         return Obx(() {
           final isDark = controller.isDarkMode.value;
 
-          return Container(
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFFEFBF6),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
-                  blurRadius: 15,
-                  spreadRadius: 1,
-                  offset: Offset(isLeftPage ? 10 : -10, 0),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                const SizedBox(height: 14),
-                _buildHeader(firstWord, isDark),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    child: isSpecialPage
-                        ? SingleChildScrollView(
-                      physics: const NeverScrollableScrollPhysics(),
-                      child: Column(
-                        children: [
-                          if (isSpecialPage) SizedBox(height: 60.h),
-                          ...lines.map((line) => Padding(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 10.h),
-                            child: _buildLine(
-                              context,
-                              line,
-                              controller,
-                              audioController,
-                              isDark,
-                              22.sp,
-                              fontFamily,
-                            ),
-                          )),
-                        ],
-                      ),
-                    )
-                        : Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: lines
-                          .map((line) => _buildLine(
-                        context,
-                        line,
-                        controller,
-                        audioController,
-                        isDark,
-                        21.sp,
-                        fontFamily,
-                      ))
-                          .toList(),
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 650),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFFEFBF6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+                      blurRadius: 15,
+                      spreadRadius: 1,
+                      offset: Offset(isLeftPage ? 10 : -10, 0),
                     ),
-                  ),
+                  ],
                 ),
-                _buildFooter(isDark),
-                const SizedBox(height: 10),
-              ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double availableHeight = constraints.maxHeight - 45;
+                    final double baseFontSize = (availableHeight / 17.5).clamp(11.0, 22.0);
+                    final double calculatedFontSize =
+                        baseFontSize * (controller.fontSize.value / 22.0);
+
+                    return Column(
+                      children: [
+                        const SizedBox(height: 6),
+                        _buildHeader(firstWord, isDark),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 4),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: lines
+                                  .map((line) => _buildLine(
+                                        context,
+                                        line,
+                                        controller,
+                                        audioController,
+                                        isDark,
+                                        calculatedFontSize,
+                                        fontFamily,
+                                      ))
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                        _buildFooter(isDark),
+                        const SizedBox(height: 4),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ),
           );
         });
@@ -196,14 +188,14 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
   // ─── بناء سطر واحد ────────────────────────────────────────────────────────
 
   Widget _buildLine(
-      BuildContext context,
-      QuranLine line,
-      MushafController controller,
-      QuranAudioController audio,
-      bool isDark,
-      double fontSize,
-      String fontFamily,
-      ) {
+    BuildContext context,
+    QuranLine line,
+    MushafController controller,
+    QuranAudioController audio,
+    bool isDark,
+    double fontSize,
+    String fontFamily,
+  ) {
     // سطر اسم السورة
     if (line.lineType == 'surah_name') {
       final surahNum = line.surahNumber ?? 0;
@@ -216,140 +208,50 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
       return _buildBasmala(isDark);
     }
 
-    // لضمان ملء السطر بالكامل (Justification) نستخدم Row مع MainAxisAlignment.spaceBetween
-    // يتم تطبيق هذا فقط على أسطر الآيات غير الممركزة
-    if (!line.isCentered && line.words.isNotEmpty) {
-      return SizedBox(
-        width: double.infinity,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          textDirection: TextDirection.rtl,
-          children: _buildWordWidgets(
-            context,
-            line.words,
-            controller,
-            audio,
-            isDark,
-            fontSize,
-            fontFamily,
-          ),
-        ),
-      );
-    }
+    final bool isCentered = line.isCentered;
 
     return SizedBox(
       width: double.infinity,
-      child: RichText(
-        textAlign: TextAlign.center,
-        textDirection: TextDirection.rtl,
-        textWidthBasis: TextWidthBasis.parent,
-        maxLines: 1,
-        locale: const Locale('ar'),
-        text: TextSpan(
-          style: TextStyle(
-            fontFamily: fontFamily,
-            fontSize: fontSize,
-            fontWeight: FontWeight.normal,
-            height: 1.6,
-            color: isDark ? Colors.white : Colors.black,
-          ),
-          children: _buildWordSpans(
-            context,
-            line.words,
-            controller,
-            audio,
-            isDark,
+      child: FittedBox(
+        fit: isCentered ? BoxFit.scaleDown : BoxFit.fitWidth,
+        alignment: Alignment.center,
+        child: RichText(
+          textAlign: isCentered ? TextAlign.center : TextAlign.justify,
+          textDirection: TextDirection.rtl,
+          textWidthBasis: TextWidthBasis.parent,
+          locale: const Locale('ar'),
+          text: TextSpan(
+            style: TextStyle(
+              fontFamily: fontFamily,
+              fontSize: fontSize,
+              fontWeight: FontWeight.normal,
+              height: 1.4,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+            children: _buildWordSpans(
+              context,
+              line.words,
+              controller,
+              audio,
+              isDark,
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ─── بناء الكلمات كـ Widgets لتوزيعها في السطر ──────────────────────────
-
-  List<Widget> _buildWordWidgets(
-      BuildContext context,
-      List<QuranWord> words,
-      MushafController controller,
-      QuranAudioController audio,
-      bool isDark,
-      double fontSize,
-      String fontFamily,
-      ) {
-    final currentAudioSurah = audio.currentSurah.value;
-    final currentAudioAyah = audio.currentAyah.value;
-    final selectedKey = controller.selectedAyahKey.value;
-    final starredSet = controller.starredVerses;
-
-    return words.map((word) {
-      final ayahKey = '${word.surah}-${word.ayah}';
-      final isSelected = currentAudioSurah == word.surah && currentAudioAyah == word.ayah;
-      final isSelectedKey = selectedKey == ayahKey;
-      final isStarred = starredSet.contains(ayahKey);
-      final bookmarkColor = controller.getAyahBookmarkColor(word.surah, word.ayah);
-      final isBookmarked = bookmarkColor != null ||
-          (controller.bookmarkedSurah.value == word.surah && controller.bookmarkedAyah.value == word.ayah);
-
-      return GestureDetector(
-        onLongPressStart: (_) => controller.selectedAyahKey.value = ayahKey,
-        onLongPressEnd: (_) {
-          // تأخير بسيط لضمان ظهور القائمة قبل إزالة التظليل
-          Future.delayed(const Duration(milliseconds: 200), () {
-            if (controller.selectedAyahKey.value == ayahKey) {
-              controller.selectedAyahKey.value = '';
-            }
-          });
-        },
-        onLongPressCancel: () => controller.selectedAyahKey.value = '',
-        onLongPress: () => AyahOptionsSheet.show(
-          context,
-          word.surah,
-          word.ayah,
-          words
-              .where((w) => w.surah == word.surah && w.ayah == word.ayah)
-              .map((w) => w.text)
-              .join(''),
-        ),
-        child: Text(
-          word.text,
-          style: TextStyle(
-            fontFamily: fontFamily,
-            fontSize: fontSize,
-            height: 1.6,
-            color: isDark ? Colors.white : Colors.black,
-            backgroundColor: isSelected
-                ? AppColors.primary.withOpacity(0.2)
-                : isSelectedKey
-                ? AppColors.primary.withOpacity(0.15)
-                : isStarred
-                ? Colors.amber.withOpacity(0.1)
-                : bookmarkColor != null
-                ? bookmarkColor.withOpacity(0.2)
-                : isBookmarked
-                ? Colors.orange.withOpacity(0.15)
-                : Colors.transparent,
-            decoration: (isBookmarked || bookmarkColor != null)
-                ? TextDecoration.underline
-                : null,
-            decorationColor: bookmarkColor ?? Colors.orange,
-          ),
-        ),
-      );
-    }).toList();
-  }
-
   // ─── كلمات السطر كـ Spans ─────────────────────────────────────────────────
 
   List<InlineSpan> _buildWordSpans(
-      BuildContext context,
-      List<QuranWord> words,
-      MushafController controller,
-      QuranAudioController audio,
-      bool isDark,
-      ) {
+    BuildContext context,
+    List<QuranWord> words,
+    MushafController controller,
+    QuranAudioController audio,
+    bool isDark,
+  ) {
     final List<InlineSpan> spans = [];
 
-    // تحسين: جلب القيم مرة واحدة خارج الحلقة
     final currentAudioSurah = audio.currentSurah.value;
     final currentAudioAyah = audio.currentAyah.value;
     final selectedKey = controller.selectedAyahKey.value;
@@ -359,14 +261,13 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
       final word = words[i];
       final ayahKey = '${word.surah}-${word.ayah}';
 
-      // التحقق من الحالات بطريقة أسرع
       final isSelected = currentAudioSurah == word.surah && currentAudioAyah == word.ayah;
       final isSelectedKey = selectedKey == ayahKey;
       final isStarred = starredSet.contains(ayahKey);
 
-      // تقليل استدعاءات البحث في المصفوفات
       final bookmarkColor = controller.getAyahBookmarkColor(word.surah, word.ayah);
-      final isBookmarked = bookmarkColor != null || (controller.bookmarkedSurah.value == word.surah && controller.bookmarkedAyah.value == word.ayah);
+      final isBookmarked = bookmarkColor != null ||
+          (controller.bookmarkedSurah.value == word.surah && controller.bookmarkedAyah.value == word.ayah);
 
       spans.add(TextSpan(
         text: i == 0 ? word.text : ' ${word.text}',
@@ -375,16 +276,15 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
           backgroundColor: isSelected
               ? AppColors.primary.withOpacity(0.2)
               : isSelectedKey
-              ? AppColors.primary.withOpacity(0.15)
-              : isStarred
-              ? Colors.amber.withOpacity(0.1)
-              : bookmarkColor != null
-              ? bookmarkColor.withOpacity(0.2)
-              : isBookmarked
-              ? Colors.orange.withOpacity(0.15)
-              : Colors.transparent,
-          decoration:
-          (isBookmarked || bookmarkColor != null)
+                  ? AppColors.primary.withOpacity(0.15)
+                  : isStarred
+                      ? Colors.amber.withOpacity(0.1)
+                      : bookmarkColor != null
+                          ? bookmarkColor.withOpacity(0.2)
+                          : isBookmarked
+                              ? Colors.orange.withOpacity(0.15)
+                              : Colors.transparent,
+          decoration: (isBookmarked || bookmarkColor != null)
               ? TextDecoration.underline
               : null,
           decorationColor: bookmarkColor ?? Colors.orange,
@@ -404,15 +304,14 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
             controller.selectedAyahKey.value = '';
           }
           ..onLongPress = () => AyahOptionsSheet.show(
-            context,
-            word.surah,
-            word.ayah,
-            words
-                .where((w) =>
-            w.surah == word.surah && w.ayah == word.ayah)
-                .map((w) => w.text)
-                .join(''),
-          ),
+                context,
+                word.surah,
+                word.ayah,
+                words
+                    .where((w) => w.surah == word.surah && w.ayah == word.ayah)
+                    .map((w) => w.text)
+                    .join(''),
+              ),
       ));
     }
 
@@ -424,7 +323,7 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
   Widget _buildSurahBanner(String name, bool isDark) {
     return Container(
       width: double.infinity,
-      height: 52,
+      height: 48,
       margin: const EdgeInsets.symmetric(vertical: 2),
       decoration: const BoxDecoration(
         image: DecorationImage(
@@ -452,7 +351,7 @@ class _QuranPageWidgetState extends State<QuranPageWidget> {
     final bool isSpecialPage = widget.pageNumber <= 2;
     return SizedBox(
       width: double.infinity,
-      height: isSpecialPage ? 48 : 38,
+      height: isSpecialPage ? 46 : 36,
       child: Image.asset(
         'assets/images/Basmala.png',
         fit: BoxFit.contain,

@@ -18,6 +18,8 @@ class MiniPlayerBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = MediaQuery.of(context).size.width > 600;
+
     return BlocBuilder<PlayerBarBloc, PlayerBarState>(
       builder: (context, barState) {
         if (barState is PlayerBarHidden || barState is PlayerBarClosed) {
@@ -40,6 +42,7 @@ class MiniPlayerBar extends StatelessWidget {
                 final title = currentItem?.title ?? "القرآن الكريم";
                 final artist = currentItem?.artist ?? playerState.reciter.name;
                 final photoUrl = getValue("${playerState.reciter.name} photo url");
+                final thumbSize = isTablet ? 36.0 : 40.w;
 
                 return Column(
                   mainAxisSize: MainAxisSize.min,
@@ -48,13 +51,18 @@ class MiniPlayerBar extends StatelessWidget {
                     _buildProgressBar(),
                     
                     Padding(
-                      padding: EdgeInsets.fromLTRB(10.w, 4.h, 4.w, 4.h),
+                      padding: EdgeInsets.fromLTRB(
+                        isTablet ? 12 : 10.w,
+                        isTablet ? 6 : 4.h,
+                        isTablet ? 6 : 4.w,
+                        isTablet ? 6 : 4.h,
+                      ),
                       child: Row(
                         children: [
                           // صورة القارئ
                           Container(
-                            width: 40.w,
-                            height: 40.h,
+                            width: thumbSize,
+                            height: thumbSize,
                             decoration: BoxDecoration(
                               color: AppColors.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(10.r),
@@ -66,10 +74,10 @@ class MiniPlayerBar extends StatelessWidget {
                                 : null,
                             ),
                             child: photoUrl == null 
-                              ? Icon(Icons.person_rounded, color: AppColors.primary, size: 20.sp)
+                              ? Icon(Icons.person_rounded, color: AppColors.primary, size: isTablet ? 20.0 : 20.sp)
                               : null,
                           ),
-                          SizedBox(width: 10.w),
+                          SizedBox(width: isTablet ? 12 : 10.w),
                           
                           // المعلومات
                           Expanded(
@@ -81,7 +89,7 @@ class MiniPlayerBar extends StatelessWidget {
                                   title,
                                   style: TextStyle(
                                     color: AppColors.textDark,
-                                    fontSize: 12.sp,
+                                    fontSize: isTablet ? 13.0 : 12.sp,
                                     fontWeight: FontWeight.w900,
                                     fontFamily: 'Cairo',
                                   ),
@@ -92,7 +100,7 @@ class MiniPlayerBar extends StatelessWidget {
                                   artist,
                                   style: TextStyle(
                                     color: AppColors.textGrey,
-                                    fontSize: 10.sp,
+                                    fontSize: isTablet ? 11.0 : 10.sp,
                                     fontFamily: 'Cairo',
                                   ),
                                   maxLines: 1,
@@ -103,7 +111,7 @@ class MiniPlayerBar extends StatelessWidget {
                           ),
 
                           // أزرار التحكم
-                          _buildActionButtons(context),
+                          _buildActionButtons(context, isTablet),
                         ],
                       ),
                     ),
@@ -142,8 +150,9 @@ class MiniPlayerBar extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(BuildContext context, bool isTablet) {
     final timerService = Get.find<SleepTimerService>();
+    final btnSize = isTablet ? 20.0 : 22.0;
 
     return StreamBuilder<PlayerState>(
       stream: audioPlayer.playerStateStream,
@@ -161,18 +170,16 @@ class MiniPlayerBar extends StatelessWidget {
               icon: Icon(
                 timerService.isActive ? Icons.timer_rounded : Icons.timer_outlined,
                 color: timerService.isActive ? AppColors.primary : Colors.grey.shade400,
-                size: 18.sp,
+                size: isTablet ? 18.0 : 18.sp,
               ),
               onPressed: () => SleepTimerDialog.show(context),
             )),
-            SizedBox(width: 8.w),
-            // السورة السابقة (تكون على اليمين في العربي)
+            SizedBox(width: isTablet ? 8 : 8.w),
             _playerBtn(
               icon: Icons.skip_previous_rounded, 
               onTap: audioPlayer.hasPrevious ? () => audioPlayer.seekToPrevious() : null,
-              size: 22,
+              size: btnSize,
             ),
-// ...
             
             GestureDetector(
               onTap: () {
@@ -183,38 +190,37 @@ class MiniPlayerBar extends StatelessWidget {
                 }
               },
               child: Container(
-                width: 32.w,
-                height: 32.h,
-                margin: EdgeInsets.symmetric(horizontal: 4.w),
+                width: isTablet ? 34.0 : 32.w,
+                height: isTablet ? 34.0 : 32.h,
+                margin: EdgeInsets.symmetric(horizontal: isTablet ? 4 : 4.w),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: processingState == ProcessingState.loading ||
                         processingState == ProcessingState.buffering
-                    ? Padding(
-                        padding: EdgeInsets.all(8.r),
-                        child: const CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    ? const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                       )
                     : Icon(
                         playing == true ? Icons.pause_rounded : Icons.play_arrow_rounded,
                         color: AppColors.primary,
-                        size: 22.sp,
+                        size: isTablet ? 22.0 : 22.sp,
                       ),
               ),
             ),
 
-            // السورة التالية (تكون على اليسار في العربي)
             _playerBtn(
               icon: Icons.skip_next_rounded,
               onTap: audioPlayer.hasNext ? () => audioPlayer.seekToNext() : null,
-              size: 22,
+              size: btnSize,
             ),
             
             IconButton(
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
-              icon: Icon(Icons.close_rounded, color: Colors.grey.shade400, size: 16.sp),
+              icon: Icon(Icons.close_rounded, color: Colors.grey.shade400, size: isTablet ? 16.0 : 16.sp),
               onPressed: () => context.read<PlayerBlocBloc>().add(ClosePlayerEvent()),
             ),
           ],
@@ -223,11 +229,11 @@ class MiniPlayerBar extends StatelessWidget {
     );
   }
 
-  Widget _playerBtn({required IconData icon, required VoidCallback? onTap, double size = 24}) {
+  Widget _playerBtn({required IconData icon, required VoidCallback? onTap, double size = 22}) {
     return IconButton(
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
-      icon: Icon(icon, color: onTap == null ? Colors.grey.shade300 : AppColors.primary, size: size.sp),
+      icon: Icon(icon, color: onTap == null ? Colors.grey.shade300 : AppColors.primary, size: size),
       onPressed: onTap,
     );
   }

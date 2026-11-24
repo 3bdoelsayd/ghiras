@@ -29,10 +29,11 @@ class RadioController extends GetxController {
   final searchController = TextEditingController();
   StreamSubscription? _playerStateSubscription;
   StreamSubscription? _playbackEventSubscription;
+  StreamSubscription? _currentIndexSubscription;
 
   // روابط إذاعة القاهرة الاحتياطية لضمان الاستقرار
   final List<String> _cairoFallbacks = [
-    "https://stream.radiojar.com/8s5u5tpdtwzuv", // رابط المستخدم (الأول)
+    "https://stream.radiojar.com/8s5u5tpdtwzuv", // رابط المستخدم الأول
     "http://live.mp3quran.net:8006/",            // رابط mp3quran
     "https://n0a.radiojar.com/8s5u5tpdtxuvv",    // رابط بديل آخر
     "https://radioqurancairo.com/live",          // رابط الموقع المتخصص
@@ -48,26 +49,53 @@ class RadioController extends GetxController {
 
   void _setupPlayerListeners() {
     _playerStateSubscription = audioPlayer.playerStateStream.listen((state) {
-      isPlaying.value = state.playing;
-      isBuffering.value = state.processingState == ProcessingState.buffering ||
-                         state.processingState == ProcessingState.loading;
-      
-      if (state.processingState == ProcessingState.completed) {
-        isPlaying.value = false;
+      if (currentRadio.value != null) {
+        isPlaying.value = state.playing;
+        isBuffering.value = state.processingState == ProcessingState.buffering ||
+                           state.processingState == ProcessingState.loading;
+
+        // في حال انقطاع البث المباشر أثناء التشغيل نعيد الاتصال تلقائياً
+        if (state.processingState == ProcessingState.idle && isPlaying.value) {
+          _reconnectRadio();
+        }
       }
     });
 
-    _playbackEventSubscription = audioPlayer.playbackEventStream.listen((event) {
-    }, onError: (Object e, StackTrace st) {
-      errorMessage.value = "حدث خطأ في التشغيل: $e";
-      isPlaying.value = false;
+    _currentIndexSubscription = audioPlayer.currentIndexStream.listen((index) {
+      if (index != null && allRadios.isNotEmpty && index < allRadios.length) {
+        final radio = allRadios[index];
+        if (currentRadio.value?.id != radio.id) {
+          currentRadio.value = radio;
+        }
+      }
     });
+
+    _playbackEventSubscription = audioPlayer.playbackEventStream.listen((event) {},
+        onError: (Object e, StackTrace st) {
+      debugPrint("Radio Playback Error: $e");
+      if (currentRadio.value != null && isPlaying.value) {
+        _reconnectRadio();
+      } else {
+        errorMessage.value = "حدث خطأ في تشغيل الإذاعة: $e";
+      }
+    });
+  }
+
+  void _reconnectRadio() {
+    if (currentRadio.value != null) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (currentRadio.value != null && isPlaying.value) {
+          playRadio(currentRadio.value!, isRetry: true);
+        }
+      });
+    }
   }
 
   @override
   void onClose() {
     _playerStateSubscription?.cancel();
     _playbackEventSubscription?.cancel();
+    _currentIndexSubscription?.cancel();
     searchController.dispose();
     super.onClose();
   }
@@ -80,7 +108,6 @@ class RadioController extends GetxController {
       if (fetchedRadios.isEmpty) {
         errorMessage.value = 'لا توجد إذاعات متاحة حالياً';
       } else {
-        allRadios.value = fetchedRadios;
         _categorizeRadios(fetchedRadios);
       }
     } catch (e) {
@@ -91,7 +118,7 @@ class RadioController extends GetxController {
   }
 
   void _categorizeRadios(List<QuranRadio> list) {
-    // 1. إضافة إذاعة القاهرة يدوياً بأول رابط متاح
+    // 1. إضافة إذاعة القاهرة
     final cairo = QuranRadio(
       id: 828282, 
       name: "إذاعة القرآن الكريم من القاهرة",
@@ -99,13 +126,18 @@ class RadioController extends GetxController {
     );
     cairoRadio.value = cairo;
 
-    // 2. إذاعات القراء (التي تحتوي على اسم "إذاعة" وكلمة "الشيخ" أو "القارئ")
+    // 2. تجميع كافة الإذاعات لتمكين التبديل عبر شريط الإشعارات والتحكم الخارجي
+    List<QuranRadio> fullList = [cairo];
+    fullList.addAll(list.where((r) => !r.name.contains('القاهرة')));
+    allRadios.value = fullList;
+
+    // 3. إذاعات القراء
     reciterRadios.value = list.where((r) => 
       (r.name.contains('الشيخ') || r.name.contains('القارئ')) &&
       !r.name.contains('تفسير') && !r.name.contains('ترجمة')
     ).toList();
 
-    // 3. الإذاعات الأخرى (الإذاعات العامة، التفسير، اللغات، بث مباشر)
+    // 4. الإذاعات الأخرى
     otherRadios.value = list.where((r) => 
       !reciterRadios.contains(r) && !r.name.contains('القاهرة')
     ).toList();
@@ -114,7 +146,6 @@ class RadioController extends GetxController {
     filteredReciterRadios.value = reciterRadios;
     filteredOtherRadios.value = otherRadios;
     
-    // إذا كانت قائمة القراء فارغة لسبب ما، نضع كل شيء في "أخرى"
     if (reciterRadios.isEmpty) {
       filteredOtherRadios.value = list.where((r) => !r.name.contains('القاهرة')).toList();
     }
@@ -131,29 +162,34 @@ class RadioController extends GetxController {
       errorMessage.value = '';
       if (!isRetry) isBuffering.value = true;
 
-      await audioPlayer.stop();
-      
-      await audioPlayer.setAudioSource(
-        AudioSource.uri(
-          Uri.parse(radio.url),
+      int index = allRadios.indexWhere((r) => r.id == radio.id);
+      if (index == -1) index = 0;
+
+      // بناء قائمة تشغيل كاملة تمكّن المستخدم من التبديل بين الإذاعات من قفل الشاشة وشريط الإشعارات
+      List<AudioSource> sources = allRadios.map((r) {
+        return AudioSource.uri(
+          Uri.parse(r.url),
           tag: MediaItem(
-            id: 'radio_${radio.id}',
-            album: 'غراس - إذاعات',
-            title: radio.name,
-            artist: 'إذاعة مباشرة',
+            id: 'radio_${r.id}',
+            album: 'إذاعات القرآن الكريم',
+            title: r.name,
+            artist: 'بث مباشر - غراس',
             artUri: Uri.parse("asset:///assets/images/logo.png"),
           ),
-        ),
+        );
+      }).toList();
+
+      await audioPlayer.stop();
+      await audioPlayer.setAudioSource(
+        ConcatenatingAudioSource(children: sources),
+        initialIndex: index,
       );
       
       await audioPlayer.play();
     } catch (e) {
-      // منطق الاسترداد (Fallback) لإذاعة القاهرة
       if (radio.id == 828282 && _currentCairoFallbackIndex < _cairoFallbacks.length - 1) {
         _currentCairoFallbackIndex++;
-        debugPrint("Cairo Radio failed, trying fallback index: $_currentCairoFallbackIndex");
         
-        // إظهار تنبيه بسيط للمستخدم
         Get.snackbar(
           'تنبيه',
           'جاري محاولة رابط بديل لإذاعة القاهرة...',
@@ -172,7 +208,7 @@ class RadioController extends GetxController {
       } else {
         errorMessage.value = 'تعذر تشغيل الإذاعة. حاول مرة أخرى';
         isBuffering.value = false;
-        _currentCairoFallbackIndex = 0; // إعادة التعيين للمرة القادمة
+        _currentCairoFallbackIndex = 0;
       }
     }
   }

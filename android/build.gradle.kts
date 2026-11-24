@@ -1,6 +1,14 @@
 import com.android.build.gradle.BaseExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
+rootProject.layout.buildDirectory.value(newBuildDir)
+
+subprojects {
+    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.value(newSubprojectBuildDir)
+}
+
 allprojects {
     repositories {
         google()
@@ -28,20 +36,6 @@ subprojects {
 
             if (android.namespace == null) {
                 android.namespace = "com.ghiras.${project.name.replace("-", "_").replace(":", "_")}"
-            }
-
-            // Force namespace for libraries and remove package from manifest
-            val manifestFile = file("src/main/AndroidManifest.xml")
-            if (manifestFile.exists()) {
-                val content = manifestFile.readText()
-                if (content.contains("package=")) {
-                    val namespace = Regex("""package="([^"]*)"""").find(content)?.groups?.get(1)?.value
-                    if (namespace != null && android.namespace == null) {
-                        android.namespace = namespace
-                    }
-                    val newContent = content.replace(Regex("""package="[^"]*""""), "")
-                    manifestFile.writeText(newContent)
-                }
             }
         }
     }

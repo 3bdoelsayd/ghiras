@@ -26,9 +26,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  final PrayerService _prayerService = Get.find<PrayerService>();
+  late PrayerService _prayerService;
   Timer? _timer;
-  String _timeUntilNext = '';
+  final RxString _timeUntilNext = ''.obs;
   // final Box _settingsBox = Hive.box('settings');
   bool _showAllFeatures = false;
 
@@ -42,39 +42,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    // _settingsBox.clear();
+    if (!Get.isRegistered<PrayerService>()) {
+      Get.put(PrayerService(), permanent: true);
+    }
+    _prayerService = Get.find<PrayerService>();
+
     if (!Get.isRegistered<KhatmahController>()) {
-      Get.put(KhatmahController());
+      Get.put(KhatmahController(), permanent: true);
     }
 
-    _headerAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    _cardAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _featuresAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-
-    // _initDefaultPrayers();
-    // _initLocationAndPrayers();
     _startTimer();
     _refreshRandomContent();
 
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _headerAnimController.forward();
-      Future.delayed(const Duration(milliseconds: 200), () => _cardAnimController.forward());
-      Future.delayed(const Duration(milliseconds: 400), () => _featuresAnimController.forward());
-      
-      // ✅ فحص الصلاحيات وطلبها عند فتح التطبيق لضمان ظهور النافذة
-      Get.find<NotificationService>().requestFullPermissions();
-
-      // ✅ فحص إظهار رسالة الدعم عند فتح التطبيق
-      _checkSupportDialog();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        if (Get.isRegistered<NotificationService>()) {
+          Get.find<NotificationService>().requestFullPermissions();
+        }
+        _checkSupportDialog();
+      }
     });
   }
 
@@ -84,7 +70,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     openCount++;
     box.put('app_open_count', openCount);
 
-    // إظهار الرسالة كل 5 مرات فتح للتطبيق لضمان التذكير المستمر
     if (openCount % 5 == 0) {
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
@@ -94,13 +79,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }
   }
 
+  void _initRandomContent() {
+    _randomSurah = Random().nextInt(114) + 1;
+    _randomVerse = Random().nextInt(quran.getVerseCount(_randomSurah)) + 1;
+  }
 
   void _refreshRandomContent() {
-    setState(() {
-      _randomSurah = Random().nextInt(114) + 1;
-      _randomVerse = Random().nextInt(quran.getVerseCount(_randomSurah)) + 1;
-       // _randomHadith = AppData.zikrNotfications[Random().nextInt(AppData.zikrNotfications.length)];
-    });
+    if (mounted) {
+      setState(() {
+        _randomSurah = Random().nextInt(114) + 1;
+        _randomVerse = Random().nextInt(quran.getVerseCount(_randomSurah)) + 1;
+      });
+    }
   }
 
   @override
@@ -145,11 +135,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final minutes = diff.inMinutes % 60;
     final seconds = diff.inSeconds % 60;
 
-    if (mounted) {
-      setState(() {
-        _timeUntilNext = '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-      });
-    }
+    _timeUntilNext.value = '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   String _getPrayerName(Prayer prayer) {
@@ -166,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("HomeScreen: build() called");
     return Scaffold(
       backgroundColor: const Color(0xFFF8F6F1),
       body: Stack(
@@ -205,41 +192,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
           ..._buildDecorativeParticles(),
-          SafeArea(
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                _buildAnimatedHeader(),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 12),
-                        _buildGreetingSection(),
-                        const SizedBox(height: 16),
-                      ],
+          Positioned.fill(
+            child: SafeArea(
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  _buildAnimatedHeader(),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 12),
+                          _buildGreetingSection(),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                _buildPrayerCardWithLocation(),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                    child: _buildSectionTitle('ورد اليوم', ''),
+                  _buildPrayerCardWithLocation(),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                      child: _buildSectionTitle('ورد اليوم', ''),
+                    ),
                   ),
-                ),
-                _buildKhatmahCard(),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                    child: _buildSectionTitle('محتوى يومي', ''),
+                  _buildKhatmahCard(),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                      child: _buildSectionTitle('محتوى يومي', ''),
+                    ),
                   ),
-                ),
-                _buildDailyContentCards(),
-                const SliverToBoxAdapter(child: SizedBox(height: 40)),
-              ],
+                  _buildDailyContentCards(),
+                  const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                ],
+              ),
             ),
           ),
         ],
@@ -272,53 +261,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       backgroundColor: Colors.transparent,
       expandedHeight: 70,
       flexibleSpace: FlexibleSpaceBar(
-        background: FadeTransition(
-          opacity: _headerAnimController,
-          child: SlideTransition(
-            position: Tween<Offset>(begin: const Offset(0, -0.3), end: Offset.zero)
-                .animate(CurvedAnimation(parent: _headerAnimController, curve: Curves.easeOutCubic)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        background: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Image.asset('assets/images/logo.png', height: 32),
-                      const SizedBox(width: 12),
-                      const Text(
-                        AppStrings.appName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 22,
-                          fontFamily: 'Cairo',
-                          color: Color(0xFF2C3E50),
-                        ),
-                      ),
-                    ],
-                  ),
-                  GestureDetector(
-                    onTap: () => context.push(AppRouter.settings),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(Icons.settings_outlined, color: Color(0xFF2C3E50), size: 22),
+                  Image.asset('assets/images/logo.png', height: 32),
+                  const SizedBox(width: 12),
+                  const Text(
+                    AppStrings.appName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 22,
+                      fontFamily: 'Cairo',
+                      color: Color(0xFF2C3E50),
                     ),
                   ),
                 ],
               ),
-            ),
+              GestureDetector(
+                onTap: () => context.push(AppRouter.settings),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.settings_outlined, color: Color(0xFF2C3E50), size: 22),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -333,54 +315,44 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ? 'طاب يومك 🌤️'
         : 'مساء الخير 🌙';
 
-    return FadeTransition(
-      opacity: _headerAnimController,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'السلام عليكم ورحمة الله',
-            style: TextStyle(
-              color: const Color(0xFF7F8C8D),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              fontFamily: 'Cairo',
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'السلام عليكم ورحمة الله',
+          style: TextStyle(
+            color: Color(0xFF7F8C8D),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Cairo',
           ),
-          const SizedBox(height: 2),
-          Text(
-            greeting,
-            style: const TextStyle(
-              color: Color(0xFF2C3E50),
-              fontSize: 22,
-              fontWeight: FontWeight.w900,
-              fontFamily: 'Cairo',
-              height: 1.2,
-            ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          greeting,
+          style: const TextStyle(
+            color: Color(0xFF2C3E50),
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            fontFamily: 'Cairo',
+            height: 1.2,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildPrayerCardWithLocation() {
     return SliverToBoxAdapter(
-      child: FadeTransition(
-        opacity: _cardAnimController,
-        child: SlideTransition(
-          position: Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero)
-              .animate(CurvedAnimation(parent: _cardAnimController, curve: Curves.easeOutCubic)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Obx(() {
-              final prayerTimes = _prayerService.prayerTimes.value;
-              if (prayerTimes == null || _prayerService.isLoading.value) {
-                return _buildPrayerCardSkeleton();
-              }
-              return _buildPrayerCardContent(prayerTimes);
-            }),
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Obx(() {
+          final prayerTimes = _prayerService.prayerTimes.value;
+          if (prayerTimes == null || _prayerService.isLoading.value) {
+            return _buildPrayerCardSkeleton();
+          }
+          return _buildPrayerCardContent(prayerTimes);
+        }),
       ),
     );
   }
@@ -534,15 +506,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               size: 11, // ✅ كان 12
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              _timeUntilNext,
+                            Obx(() => Text(
+                              _timeUntilNext.value,
                               style: const TextStyle(
                                 color: Color(0xFFC9A84C),
                                 fontSize: 10, // ✅ كان 11
                                 fontWeight: FontWeight.w700,
                                 fontFamily: 'Cairo',
                               ),
-                            ),
+                            )),
                           ],
                         ),
                       ),
@@ -680,11 +652,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildKhatmahCard() {
     final khatmahController = Get.find<KhatmahController>();
     return SliverToBoxAdapter(
-      child: FadeTransition(
-        opacity: _featuresAnimController,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Obx(() {
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Obx(() {
             // مراقبة عدد الختمات لضمان التفاعل
             final int khatmatCount = khatmahController.khatmat.length;
             
@@ -909,8 +879,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             );
           }),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildSectionTitle(String title, String action) {
@@ -962,12 +931,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildDailyContentCards() {
     return SliverToBoxAdapter(
-      child: FadeTransition(
-        opacity: _featuresAnimController,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            children: [
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: [
               _buildDailyCard(
                 'آية اليوم',
                 quran.getVerse(_randomSurah, _randomVerse),
@@ -978,8 +945,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildDailyCard(String title, String content, String subtitle, IconData icon, Color color) {
@@ -1037,9 +1003,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                       Row(
                         children: [
-                          GestureDetector(
-                            onTap: () => Share.share('$content\n\n[$subtitle]\nتطبيق ${AppStrings.appName}\n${AppStrings.appStoreLink}'),
-                            child: Icon(Icons.share_rounded, size: 16, color: color.withOpacity(0.5)),
+                          Builder(
+                            builder: (ctx) => GestureDetector(
+                              onTap: () {
+                                final box = ctx.findRenderObject() as RenderBox?;
+                                final Rect? origin = box != null && box.hasSize
+                                    ? box.localToGlobal(Offset.zero) & box.size
+                                    : null;
+                                Share.share(
+                                  '$content\n\n[$subtitle]\nتطبيق ${AppStrings.appName}\n${AppStrings.appStoreLink}',
+                                  sharePositionOrigin: origin,
+                                );
+                              },
+                              child: Icon(Icons.share_rounded, size: 16, color: color.withOpacity(0.5)),
+                            ),
                           ),
                           const SizedBox(width: 14),
                           GestureDetector(

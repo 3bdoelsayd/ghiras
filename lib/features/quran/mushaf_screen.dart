@@ -92,7 +92,7 @@ class _MushafScreenState extends State<MushafScreen> {
           children: [
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 500),
+                constraints: const BoxConstraints(maxWidth: 650),
                 child: PageView.builder(
                   controller: _pageController,
                   reverse: false,
@@ -200,6 +200,12 @@ class _MushafScreenState extends State<MushafScreen> {
         child: Obx(() => Row(
           children: [
             IconButton(
+              icon: const Icon(Icons.skip_previous_rounded, size: 22, color: AppColors.primary),
+              onPressed: audio.playPreviousAyah,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            IconButton(
               icon: audio.isLoading.value
                   ? const SizedBox(
                   width: 24,
@@ -209,9 +215,15 @@ class _MushafScreenState extends State<MushafScreen> {
                   audio.isPlaying.value
                       ? Icons.pause_circle_filled
                       : Icons.play_circle_fill,
-                  size: 40,
+                  size: 38,
                   color: AppColors.primary),
               onPressed: audio.togglePlay,
+            ),
+            IconButton(
+              icon: const Icon(Icons.skip_next_rounded, size: 22, color: AppColors.primary),
+              onPressed: audio.playNextAyah,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
             ),
             const SizedBox(width: 12),
             Expanded(

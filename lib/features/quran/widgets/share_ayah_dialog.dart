@@ -175,7 +175,12 @@ class _ShareAyahDialogState extends State<ShareAyahDialog> {
     shareContent += "\nتمت المشاركة من تطبيق ${AppStrings.appName}";
     shareContent += "\n${AppStrings.appStoreLink}";
 
-    await Share.share(shareContent);
+    final box = context.findRenderObject() as RenderBox?;
+    final Rect? origin = box != null && box.hasSize
+        ? box.localToGlobal(Offset.zero) & box.size
+        : null;
+
+    await Share.share(shareContent, sharePositionOrigin: origin);
     if (mounted) Navigator.pop(context);
   }
 }

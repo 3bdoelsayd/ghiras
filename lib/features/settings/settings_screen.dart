@@ -407,16 +407,23 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () => SupportDialog.show(context)
             ),
             const Divider(height: 1, indent: 50),
-            _buildSettingTile(
-                title: "شارك التطبيق",
-                icon: Icons.share_rounded,
-                iconColor: Colors.blue,
-                onTap: () {
-                  Share.share(
-                    "حمّل تطبيق ${AppStrings.appName} الآن.. صدقة جارية في جيبك، مواقيت صلاة، قرآن، وأذكار بدون إعلانات.\n\n"
-                        "رابط التحميل: ${AppStrings.appStoreLink}",
-                  );
-                }
+            Builder(
+              builder: (ctx) => _buildSettingTile(
+                  title: "شارك التطبيق",
+                  icon: Icons.share_rounded,
+                  iconColor: Colors.blue,
+                  onTap: () {
+                    final box = ctx.findRenderObject() as RenderBox?;
+                    final Rect? origin = box != null && box.hasSize
+                        ? box.localToGlobal(Offset.zero) & box.size
+                        : null;
+                    Share.share(
+                      "حمّل تطبيق ${AppStrings.appName} الآن.. صدقة جارية في جيبك، مواقيت صلاة، قرآن، وأذكار بدون إعلانات.\n\n"
+                          "رابط التحميل: ${AppStrings.appStoreLink}",
+                      sharePositionOrigin: origin,
+                    );
+                  }
+              ),
             ),
           ]),
 

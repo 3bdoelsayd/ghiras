@@ -84,32 +84,27 @@ class _PlayerBarState extends State<PlayerBar> {
                                       opacity: .8,
                                       child: Material(
                                         color: Colors.transparent,
-                                        child: SpinPerfect(
-                                          infinite: true,
-                                          duration: const Duration(seconds: 7),
-                                          animate: snapshot.data!.playing,
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              playerbarBloc.add(ShowBarEvent());
-                                            },
-                                            child: Container(
-                                              height: 55.h,
-                                              width: 55.w,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: AppColors.primary,
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black.withOpacity(0.2),
-                                                    blurRadius: 10,
-                                                  )
-                                                ],
-                                              ),
-                                              child: const Center(
-                                                child: CircleAvatar(
-                                                  backgroundColor: Colors.transparent,
-                                                  backgroundImage: AssetImage("assets/images/iconlauncher.png"),
-                                                ),
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            playerbarBloc.add(ShowBarEvent());
+                                          },
+                                          child: Container(
+                                            height: 55.h,
+                                            width: 55.w,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: AppColors.primary,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withOpacity(0.2),
+                                                  blurRadius: 10,
+                                                )
+                                              ],
+                                            ),
+                                            child: const Center(
+                                              child: CircleAvatar(
+                                                backgroundColor: Colors.transparent,
+                                                backgroundImage: AssetImage("assets/images/iconlauncher.png"),
                                               ),
                                             ),
                                           ),
@@ -181,21 +176,16 @@ class _PlayerBarState extends State<PlayerBar> {
               stream: state.audioPlayer.playerStateStream,
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  return SpinPerfect(
-                    infinite: true,
-                    duration: const Duration(seconds: 7),
-                    animate: snapshot.data!.playing,
-                    child: Container(
-                      height: 45.h,
-                      width: 45.w,
-                      decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.darkPrimary),
-                      child: const Center(
-                        child: CircleAvatar(
-                          backgroundColor: Colors.transparent,
-                          backgroundImage: AssetImage("assets/images/iconlauncher.png"),
-                        ),
+                  return Container(
+                    height: 45.h,
+                    width: 45.w,
+                    decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.darkPrimary),
+                    child: const Center(
+                      child: CircleAvatar(
+                        backgroundColor: Colors.transparent,
+                        backgroundImage: AssetImage("assets/images/iconlauncher.png"),
                       ),
                     ),
                   );

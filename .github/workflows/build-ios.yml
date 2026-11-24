@@ -13,7 +13,6 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.0'
           channel: 'stable'
 
       - name: Disable Swift Package Manager
@@ -31,30 +30,16 @@ jobs:
           rm -rf ~/.pub-cache
           rm -f pubspec.lock
 
-      - name: Pub get (verbose)
-        run: flutter pub get -v 2>&1 | grep -i "url_launcher" || echo "No url_launcher mentions in pub get output"
-
-      - name: Debug package resolution
-        run: |
-          python3 -c "
-          import json
-          data = json.load(open('.dart_tool/package_config.json'))
-          names = [p['name'] for p in data['packages']]
-          matches = [n for n in names if 'url_launcher' in n]
-          print('Total packages:', len(names))
-          print('url_launcher matches:', matches)
-          print('Is url_launcher present exactly?', 'url_launcher' in names)
-          print('Is url_launcher_ios present exactly?', 'url_launcher_ios' in names)
-          "
+      - name: Pub get
+        run: flutter pub get
 
       - name: Install CocoaPods
         run: cd ios && pod install
 
       - name: Build iOS app
-        continue-on-error: true
         run: flutter build ios --release --no-codesign
 
-      - name: Verify app was built
+      - name: Verify app was built & inject assets
         run: |
           ls -la build/ios/iphoneos/ || true
           if [ -d "build/ios/iphoneos/Runner.app" ]; then
@@ -68,7 +53,15 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/upload-artifact@v4
+      - name: Create IPA Package
+        run: |
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r Ghiras.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: ghiras-ios-app
-          path: build/ios/iphoneos/Runner.app
+          name: Ghiras-iOS.ipa
+          path: build/ios/iphoneos/Ghiras.ipa

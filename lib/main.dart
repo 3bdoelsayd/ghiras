@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +18,7 @@ import 'features/quran/logic/mushaf_controller.dart';
 import 'features/quran/data/page_surah_map.dart';
 import 'core/services/prayer_service.dart';
 import 'core/services/notification_service.dart';
+import 'features/khatmah/logic/khatmah_controller.dart';
 import 'features/quran/logic/player_bar_bloc/player_bar_bloc.dart';
 import 'features/quran/logic/player_bloc/player_bloc_bloc.dart';
 import 'features/quran/logic/quran_page_player/quran_page_player_bloc.dart';
@@ -35,22 +37,24 @@ void main() async {
   // 1. ضمان استقرار المحرك
   WidgetsFlutterBinding.ensureInitialized();
 
-  // تهيئة الخلفية الصوتية للتحكم من الستارة وشاشة القفل
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.ryanheise.bg_audio.channel.audio',
-    androidNotificationChannelName: 'تلاوة القرآن الكريم',
-    androidNotificationOngoing: true,
-  );
+  if (!kIsWeb) {
+    // تهيئة الخلفية الصوتية للتحكم من الستارة وشاشة القفل (للهواتف فقط)
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'com.ryanheise.bg_audio.channel.audio',
+      androidNotificationChannelName: 'تلاوة القرآن الكريم',
+      androidNotificationOngoing: true,
+    );
 
-  final session = await AudioSession.instance;
-  await session.configure(const AudioSessionConfiguration.music());
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
 
-  // تفعيل ميزة العرض حتى حافة الشاشة (Edge-to-Edge) برمجياً
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    systemNavigationBarColor: Colors.transparent,
-  ));
+    // تفعيل ميزة العرض حتى حافة الشاشة (Edge-to-Edge) برمجياً
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+    ));
+  }
 
   // تهيئة تنسيق التاريخ للغة العربية لمنع أخطاء الـ intl
   await initializeDateFormatting('ar', null);
@@ -67,13 +71,16 @@ void main() async {
   Bloc.observer = SimpleBlocObserver();
 
   // تسجيل الخدمات
-  final notificationService = Get.put(NotificationService(), permanent: true);
-  
-  // ننتظر تهيئة الإشعارات والمنطقة الزمنية
-  await notificationService.init();
+  if (!kIsWeb) {
+    final notificationService = Get.put(NotificationService(), permanent: true);
+    await notificationService.init();
+  }
 
   if (!Get.isRegistered<PrayerService>()) {
     Get.put(PrayerService(), permanent: true);
+  }
+  if (!Get.isRegistered<KhatmahController>()) {
+    Get.put(KhatmahController(), permanent: true);
   }
   if (!Get.isRegistered<AudioPlayer>()) {
     Get.put(AudioPlayer(), permanent: true);
@@ -91,7 +98,7 @@ void main() async {
   
   PageSurahMap.getFullMap();
 
-  // 4. تشغيل التطبيق (كان مفقوداً في التعديل السابق)
+  // 4. تشغيل التطبيق
   runApp(const GhirasApp());
 }
 

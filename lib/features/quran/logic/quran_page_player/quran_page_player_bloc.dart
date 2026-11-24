@@ -75,7 +75,7 @@ class QuranPagePlayerBloc
                 id: event.suraName,
                 album: reciterMatch["englishName"],
                 title: quran.getSurahNameArabic(event.surahNumber),
-                artUri: Uri.parse("https://ghiras.app/logo.png"),
+                artUri: Uri.parse("asset:///assets/images/logo.png"),
               ),
             ),
           );
@@ -108,7 +108,7 @@ class QuranPagePlayerBloc
                 id: event.url,
                 album: "القرآن الكريم",
                 title: event.title,
-                artUri: Uri.parse("https://ghiras.app/logo.png"),
+                artUri: Uri.parse("asset:///assets/images/logo.png"),
               ),
             ),
           );

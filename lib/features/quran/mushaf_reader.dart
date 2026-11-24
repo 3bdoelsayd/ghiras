@@ -425,6 +425,12 @@ class _MushafReaderState extends State<MushafReader> {
         child: Obx(() => Row(
           children: [
             IconButton(
+              icon: const Icon(Icons.skip_previous_rounded, size: 22, color: AppColors.primary),
+              onPressed: audio.playPreviousAyah,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            IconButton(
               icon: audio.isLoading.value
                   ? const SizedBox(
                   width: 24,
@@ -434,9 +440,15 @@ class _MushafReaderState extends State<MushafReader> {
                   audio.isPlaying.value
                       ? Icons.pause_circle_filled
                       : Icons.play_circle_fill,
-                  size: 40,
+                  size: 38,
                   color: AppColors.primary),
               onPressed: audio.togglePlay,
+            ),
+            IconButton(
+              icon: const Icon(Icons.skip_next_rounded, size: 22, color: AppColors.primary),
+              onPressed: audio.playNextAyah,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
             ),
             const SizedBox(width: 12),
             Expanded(

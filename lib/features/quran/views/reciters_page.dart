@@ -499,17 +499,25 @@ class _RecitersPageState extends State<RecitersPage> {
         return _buildEmptyState();
       }
 
-      return ListView.builder(
-        padding: EdgeInsets.only(top: 10.h, bottom: 20.h),
-        itemCount: list.length,
-        itemBuilder: (context, index) {
-          try {
-            return _buildReciterCard(list[index]);
-          } catch (e) {
-            debugPrint("Error building reciter card at $index: $e");
-            return const SizedBox.shrink();
-          }
-        },
+      final screenWidth = MediaQuery.of(context).size.width;
+      final isTablet = screenWidth > 600;
+
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: isTablet ? 700 : double.infinity),
+          child: ListView.builder(
+            padding: EdgeInsets.only(top: 10.h, bottom: 20.h),
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              try {
+                return _buildReciterCard(list[index], isTablet);
+              } catch (e) {
+                debugPrint("Error building reciter card at $index: $e");
+                return const SizedBox.shrink();
+              }
+            },
+          ),
+        ),
       );
     } catch (e) {
       debugPrint("Error building reciters body: $e");
@@ -563,12 +571,22 @@ class _RecitersPageState extends State<RecitersPage> {
     );
   }
 
-  Widget _buildReciterCard(Reciter reciter) {
+  Widget _buildReciterCard(Reciter reciter, bool isTablet) {
     try {
       final bool isFav = favoriteRecitersList.any((r) => r.id == reciter.id);
+      final double avatarSize = isTablet ? 42.0 : 46.w;
+      final double fontSize = isTablet ? 13.0 : 14.sp;
+      final double subtitleSize = isTablet ? 10.5 : 11.sp;
+      final double iconSize = isTablet ? 18.0 : 20.sp;
+      final double favBoxSize = isTablet ? 30.0 : 32.w;
 
       return Container(
-        margin: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
+        margin: EdgeInsets.fromLTRB(
+          isTablet ? 24 : 16.w, 
+          0, 
+          isTablet ? 24 : 16.w, 
+          isTablet ? 8 : 10.h,
+        ),
         decoration: BoxDecoration(
           color: _kCard,
           borderRadius: BorderRadius.circular(16.r),
@@ -595,11 +613,14 @@ class _RecitersPageState extends State<RecitersPage> {
                     splashColor: _kDarkGreen.withOpacity(0.1),
                   ),
                   child: ExpansionTile(
-                    tilePadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                    tilePadding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 16 : 14.w, 
+                      vertical: isTablet ? 6 : 8.h,
+                    ),
                     iconColor: _kDarkGreen,
                     collapsedIconColor: _kTextMuted,
                     leading: Container(
-                      width: 46.w, height: 46.h,
+                      width: avatarSize, height: avatarSize,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [_kDarkGreen, _kMidGreen],
@@ -613,7 +634,7 @@ class _RecitersPageState extends State<RecitersPage> {
                         reciter.name.isNotEmpty ? reciter.name[0] : "؟",
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 20.sp,
+                          fontSize: iconSize,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -627,7 +648,7 @@ class _RecitersPageState extends State<RecitersPage> {
                               Text(reciter.name,
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
-                                    fontSize: 14.sp,
+                                    fontSize: fontSize,
                                     fontWeight: FontWeight.w700,
                                     color: _kTextPrimary,
                                   )),
@@ -637,7 +658,7 @@ class _RecitersPageState extends State<RecitersPage> {
                                       : "",
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
-                                    fontSize: 11.sp,
+                                    fontSize: subtitleSize,
                                     color: _kTextMuted,
                                   )),
                             ],
@@ -647,7 +668,7 @@ class _RecitersPageState extends State<RecitersPage> {
                           onTap: () => _toggleFavorite(reciter),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            width: 32.w, height: 32.h,
+                            width: favBoxSize, height: favBoxSize,
                             decoration: BoxDecoration(
                               color: isFav ? const Color(0xFFFFE4E4) : _kFavBg,
                               borderRadius: BorderRadius.circular(9.r),
@@ -656,14 +677,14 @@ class _RecitersPageState extends State<RecitersPage> {
                             child: Icon(
                               isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                               color: _kFavIcon,
-                              size: 16.sp,
+                              size: isTablet ? 15.0 : 16.sp,
                             ),
                           ),
                         ),
                         SizedBox(width: 8.w),
                       ],
                     ),
-                    children: reciter.moshaf.map((m) => _buildMoshafRow(reciter, m)).toList(),
+                    children: reciter.moshaf.map((m) => _buildMoshafRow(reciter, m, isTablet)).toList(),
                   ),
                 ),
               ],
@@ -676,7 +697,7 @@ class _RecitersPageState extends State<RecitersPage> {
     }
   }
 
-  Widget _buildMoshafRow(Reciter reciter, Moshaf moshaf) {
+  Widget _buildMoshafRow(Reciter reciter, Moshaf moshaf, bool isTablet) {
     return InkWell(
       onTap: () => Navigator.push(
         context,
@@ -693,20 +714,24 @@ class _RecitersPageState extends State<RecitersPage> {
         bottomLeft:  Radius.circular(16.r),
       ),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 16 : 14.w, 
+          vertical: isTablet ? 8 : 10.h,
+        ),
         decoration: BoxDecoration(
           border: Border(top: BorderSide(color: _kBorder)),
         ),
         child: Row(
           children: [
             Container(
-              width: 30.w, height: 30.h,
+              width: isTablet ? 26.0 : 30.w, 
+              height: isTablet ? 26.0 : 30.h,
               decoration: BoxDecoration(
                 color: _kLightGreen,
                 borderRadius: BorderRadius.circular(8.r),
                 border: Border.all(color: const Color(0xFFC3E6CB)),
               ),
-              child: Icon(Icons.menu_book_rounded, color: _kDarkGreen, size: 15.sp),
+              child: Icon(Icons.menu_book_rounded, color: _kDarkGreen, size: isTablet ? 13.0 : 15.sp),
             ),
             SizedBox(width: 10.w),
             Expanded(
@@ -716,7 +741,7 @@ class _RecitersPageState extends State<RecitersPage> {
                   Text(moshaf.name,
                       style: TextStyle(
                         fontFamily: 'Cairo',
-                        fontSize: 12.sp,
+                        fontSize: isTablet ? 11.0 : 12.sp,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF444444),
                       )),
@@ -724,7 +749,7 @@ class _RecitersPageState extends State<RecitersPage> {
                     "${moshaf.surahTotal} سورة ${moshaf.surahTotal == 114 ? '(مصحف كامل)' : ''}",
                     style: TextStyle(
                       fontFamily: 'Cairo',
-                      fontSize: 10.sp,
+                      fontSize: isTablet ? 9.5 : 10.sp,
                       color: moshaf.surahTotal == 114 ? _kDarkGreen : Colors.orange,
                     ),
                   ),

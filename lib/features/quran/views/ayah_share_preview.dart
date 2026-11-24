@@ -86,7 +86,12 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
     return 'QCF_P${page.toString().padLeft(3, '0')}';
   }
 
-  Future<void> _shareImage() async {
+  Future<void> _shareImage(BuildContext context) async {
+    final box = context.findRenderObject() as RenderBox?;
+    final Rect? origin = box != null && box.hasSize
+        ? box.localToGlobal(Offset.zero) & box.size
+        : null;
+
     final image = await _screenshotController.capture();
     if (image == null) return;
 
@@ -94,7 +99,11 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
     final imagePath = await File('${directory.path}/ayah_share.png').create();
     await imagePath.writeAsBytes(image);
 
-    await Share.shareXFiles([XFile(imagePath.path)], text: 'تمت المشاركة من تطبيق ${AppStrings.appName}\n${AppStrings.appStoreLink}');
+    await Share.shareXFiles(
+      [XFile(imagePath.path)],
+      text: 'تمت المشاركة من تطبيق ${AppStrings.appName}\n${AppStrings.appStoreLink}',
+      sharePositionOrigin: origin,
+    );
   }
 
 
@@ -108,9 +117,11 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
         title: const Text('معاينة المشاركة', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.share_rounded),
-            onPressed: _shareImage,
+          Builder(
+            builder: (ctx) => IconButton(
+              icon: const Icon(Icons.share_rounded),
+              onPressed: () => _shareImage(ctx),
+            ),
           ),
         ],
       ),
@@ -319,15 +330,17 @@ class _AyahSharePreviewState extends State<AyahSharePreview> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                ElevatedButton.icon(
-                  onPressed: _shareImage,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                Builder(
+                  builder: (ctx) => ElevatedButton.icon(
+                    onPressed: () => _shareImage(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    ),
+                    icon: const Icon(Icons.share_rounded, color: Colors.white),
+                    label: const Text('مشاركة الصورة', style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
-                  icon: const Icon(Icons.share_rounded, color: Colors.white),
-                  label: const Text('مشاركة الصورة', style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
